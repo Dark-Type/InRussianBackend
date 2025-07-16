@@ -1,0 +1,98 @@
+openapi: 3.0.3
+info:
+  title: Russian Backend API
+  description: API for Russian language learning backend
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+paths:
+  /:
+    get:
+      summary: Hello World endpoint
+      responses:
+        '200':
+          description: Success response
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello World!"
+
+  /health:
+    get:
+      summary: Health check endpoint
+      responses:
+        '200':
+          description: Server health status
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "OK - Server is healthy"
+
+  /cities:
+    get:
+      summary: Get all cities
+      responses:
+        '200':
+          description: List of cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+    post:
+      summary: Create a new city
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/City'
+      responses:
+        '201':
+          description: City created successfully
+          content:
+            application/json:
+              schema:
+                type: integer
+                description: ID of the created city
+
+  /cities/{id}:
+    get:
+      summary: Get city by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: City details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/City'
+        '404':
+          description: City not found
+
+components:
+  schemas:
+    City:
+      type: object
+      required:
+        - name
+        - population
+      properties:
+        name:
+          type: string
+          description: Name of the city
+          example: "Moscow"
+        population:
+          type: integer
+          description: Population of the city
+          example: 12506468

@@ -1,0 +1,8 @@
+openapi: "3.1.0"
+info:
+  title: "InRussianBackend API"
+  description: "InRussianBackend API"
+  version: "1.0.0"
+servers:
+- url: "https://InRussianBackend"
+paths: {}
