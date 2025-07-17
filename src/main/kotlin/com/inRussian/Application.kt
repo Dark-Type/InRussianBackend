@@ -11,6 +11,7 @@ fun Application.module() {
     println("Configuring application module...")
 
     configureSerialization()
+    configureDatabase()
     configureHTTP()
     configureMonitoring()
     configureSecurity()
