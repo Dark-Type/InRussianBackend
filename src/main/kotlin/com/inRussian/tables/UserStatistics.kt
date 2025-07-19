@@ -5,6 +5,7 @@ import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.date
 import org.jetbrains.exposed.sql.javatime.timestamp
 
+
 object UserStatistics : Table("user_statistics") {
     val userId = reference("user_id", Users)
     val totalTasksCompleted = integer("total_tasks_completed").default(0)

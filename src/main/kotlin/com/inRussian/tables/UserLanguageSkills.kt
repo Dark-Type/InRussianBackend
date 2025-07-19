@@ -2,6 +2,7 @@ package com.inRussian.tables
 
 import org.jetbrains.exposed.sql.Table
 
+
 object UserLanguageSkills : Table("user_language_skills") {
     val userId = reference("user_id", Users)
     val language = varchar("language", 50)

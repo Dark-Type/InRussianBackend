@@ -1,4 +1,4 @@
-package com.inRussian.requests.admin
+package com.inRussian.requests.users
 
 import kotlinx.serialization.Serializable
 

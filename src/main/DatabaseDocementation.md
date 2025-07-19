@@ -397,6 +397,12 @@ $$ LANGUAGE plpgsql;
 ```sql
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE TYPE user_status AS ENUM (
+               'ACTIVE',
+               'SUSPENDED',
+               'DEACTIVATED',
+               'PENDING_VERIFICATION'
+               )
 -- Все пользователи
 CREATE TABLE users (
                        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -407,7 +413,9 @@ CREATE TABLE users (
                        avatar_id VARCHAR(255),
                        last_activity_at TIMESTAMP WITH TIME ZONE,
                        created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                       password_hash TEXT NOT NULL,
+                       status user_status NOT NULL DEFAULT 'ACTIVE'
 );
 
 -- Только для студентов

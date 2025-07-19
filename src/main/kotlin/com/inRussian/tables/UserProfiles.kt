@@ -5,6 +5,7 @@ import com.inRussian.models.users.PeriodSpent
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 
+
 object UserProfiles : Table("user_profiles") {
     val userId = reference("user_id", Users)
     val surname = varchar("surname", 100)

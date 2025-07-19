@@ -3,6 +3,7 @@ package com.inRussian.tables
 import com.inRussian.models.tasks.ContentType
 import org.jetbrains.exposed.dao.id.UUIDTable
 
+
 object TaskContent : UUIDTable("task_content") {
     val taskId = reference("task_id", Tasks)
     val contentType = enumerationByName("content_type", 20, ContentType::class)

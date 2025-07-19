@@ -2,6 +2,7 @@ package com.inRussian.tables
 
 import org.jetbrains.exposed.dao.id.UUIDTable
 
+
 object TaskAnswerOptions : UUIDTable("task_answer_options") {
     val taskId = reference("task_id", Tasks)
     val optionText = text("option_text").nullable()

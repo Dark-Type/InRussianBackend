@@ -4,6 +4,7 @@ import com.inRussian.models.progress.TaskStatus
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.timestamp
 
+
 object UserTaskProgress : Table("user_task_progress") {
     val userId = reference("user_id", Users)
     val taskId = reference("task_id", Tasks)

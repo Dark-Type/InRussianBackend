@@ -9,21 +9,10 @@ import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.defaultheaders.*
 import io.ktor.server.plugins.openapi.*
-import io.ktor.server.plugins.statuspages.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.plugins.swagger.*
-import kotlinx.serialization.json.Json
 
 fun Application.configureHTTP() {
-    install(ContentNegotiation) {
-        json(Json {
-            prettyPrint = true
-            isLenient = true
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-        })
-    }
 
     install(CORS) {
         allowMethod(HttpMethod.Options)

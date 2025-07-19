@@ -4,6 +4,7 @@ import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
+
 object Sections : UUIDTable("sections") {
     val courseId = reference("course_id", Courses)
     val name = varchar("name", 255)

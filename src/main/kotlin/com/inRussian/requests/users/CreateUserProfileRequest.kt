@@ -10,8 +10,8 @@ data class CreateUserProfileRequest(
     val name: String,
     val patronymic: String? = null,
     val gender: Gender,
-    val dob: String, // YYYY-MM-DD
-    val dor: String, // YYYY-MM-DD
+    val dob: String, // YYYY-MM-DD format
+    val dor: String, // YYYY-MM-DD format
     val citizenship: String? = null,
     val nationality: String? = null,
     val countryOfResidence: String? = null,

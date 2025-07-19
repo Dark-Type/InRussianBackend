@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.1.10"
 }
 
-group = "com.example"
+group = "com.inRussian"
 version = "0.0.1"
 
 application {
@@ -45,12 +45,13 @@ dependencies {
     implementation("io.ktor:ktor-server-status-pages")
     implementation("io.ktor:ktor-client-cio")
     implementation("io.ktor:ktor-server-config-yaml")
-    implementation("org.jetbrains.exposed:exposed-core:0.52.0")
+    implementation("org.jetbrains.exposed:exposed-core:0.61.0")
     implementation("com.zaxxer:HikariCP:5.0.1")
-    implementation("org.jetbrains.exposed:exposed-dao:0.52.0")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.52.0")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.52.0")
-    implementation("org.jetbrains.exposed:exposed-json:0.52.0")
+    implementation("org.jetbrains.exposed:exposed-dao:0.61.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.61.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.61.0")
+    implementation("org.jetbrains.exposed:exposed-json:0.61.0")
     testImplementation("io.ktor:ktor-server-test-host")
+    implementation("org.mindrot:jbcrypt:0.4")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

@@ -1,98 +1,702 @@
 openapi: 3.0.3
 info:
-  title: InRussian Backend API
-  description: API for InRussian project
-  version: 1.0.0
+  title: "InRussian API"
+  version: "1.0.0"
+  description: "Auto-generated OpenAPI spec for authentication and profile routes."
 servers:
-  - url: http://localhost:8080
-    description: Development server
-
+  - url: "http://localhost:8080"
 paths:
-  /:
-    get:
-      summary: Hello World endpoint
-      responses:
-        '200':
-          description: Success response
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "Hello World!"
-
-  /health:
-    get:
-      summary: Health check endpoint
-      responses:
-        '200':
-          description: Server health status
-          content:
-            text/plain:
-              schema:
-                type: string
-                example: "OK - Server is healthy"
-
-  /cities:
-    get:
-      summary: Get all cities
-      responses:
-        '200':
-          description: List of cities
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/City'
+  /auth/student/register:
     post:
-      summary: Create a new city
+      summary: "Register a student"
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/City'
+              $ref: "#/components/schemas/StudentRegisterRequest"
       responses:
         '201':
-          description: City created successfully
+          description: "Student registered"
           content:
             application/json:
               schema:
-                type: integer
-                description: ID of the created city
-
-  /cities/{id}:
-    get:
-      summary: Get city by ID
+                $ref: "#/components/schemas/LoginResponse"
+        '400':
+          description: "Registration error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/login:
+    post:
+      summary: "Login"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        '200':
+          description: "Login successful"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '401':
+          description: "Unauthorized"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/admin/create-initial:
+    post:
+      summary: "Create initial admin"
+      responses:
+        '201':
+          description: "Admin created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminCreatedResponse"
+        '400':
+          description: "Error creating admin"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/staff/register:
+    post:
+      summary: "Register staff"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StaffRegisterRequest"
+      responses:
+        '201':
+          description: "Staff registered"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        '400':
+          description: "Staff registration error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/users/{id}/status:
+    put:
+      summary: "Update user status"
       parameters:
         - name: id
           in: path
           required: true
           schema:
-            type: integer
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
       responses:
         '200':
-          description: City details
+          description: "Status updated"
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/City'
+                $ref: "#/components/schemas/MessageResponse"
+        '400':
+          description: "Error updating status"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /auth/logout:
+    post:
+      summary: "Logout"
+      responses:
+        '200':
+          description: "Logged out successfully"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+  /auth/me:
+    get:
+      summary: "Get current user info"
+      responses:
+        '200':
+          description: "User info"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserInfoResponse"
+  /profiles/user:
+    post:
+      summary: "Create user profile"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserProfileRequest"
+      responses:
+        '201':
+          description: "User profile created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        '400':
+          description: "Profile creation error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: "Get own user profile"
+      responses:
+        '200':
+          description: "User profile"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
         '404':
-          description: City not found
-
+          description: "Profile not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: "Update own user profile"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserProfileRequest"
+      responses:
+        '200':
+          description: "Profile updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        '400':
+          description: "Update error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/user/{id}:
+    get:
+      summary: "Get user profile by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "User profile"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        '404':
+          description: "Profile not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: "Update user profile by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserProfileRequest"
+      responses:
+        '200':
+          description: "Profile updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfileResponse"
+        '403':
+          description: "Access denied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/staff:
+    post:
+      summary: "Create staff profile"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateStaffProfileRequest"
+      responses:
+        '201':
+          description: "Staff profile created"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffProfileResponse"
+        '400':
+          description: "Profile creation error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      summary: "Get own staff profile"
+      responses:
+        '200':
+          description: "Staff profile"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffProfileResponse"
+        '404':
+          description: "Profile not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: "Update own staff profile"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStaffProfileRequest"
+      responses:
+        '200':
+          description: "Staff profile updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffProfileResponse"
+        '400':
+          description: "Update error"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /profiles/staff/{id}:
+    get:
+      summary: "Get staff profile by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: "Staff profile"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffProfileResponse"
+        '404':
+          description: "Profile not found"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      summary: "Update staff profile by ID"
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStaffProfileRequest"
+      responses:
+        '200':
+          description: "Staff profile updated"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffProfileResponse"
+        '403':
+          description: "Access denied"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
-    City:
+    ErrorResponse:
       type: object
-      required:
-        - name
-        - population
+      properties:
+        success:
+          type: boolean
+        error:
+          type: string
+        code:
+          type: integer
+          nullable: true
+        timestamp:
+          type: integer
+          format: int64
+    MessageResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+    StaffRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        role:
+          $ref: "#/components/schemas/UserRole"
+        systemLanguage:
+          $ref: "#/components/schemas/SystemLanguage"
+    StudentRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        systemLanguage:
+          $ref: "#/components/schemas/SystemLanguage"
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        accessToken:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserInfo"
+        message:
+          type: string
+          nullable: true
+        timestamp:
+          type: integer
+          format: int64
+    UserInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+        phone:
+          type: string
+          nullable: true
+        systemLanguage:
+          type: string
+        status:
+          type: string
+    UserInfoData:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+    UserInfoResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserInfoData"
+        message:
+          type: string
+          nullable: true
+        timestamp:
+          type: integer
+          format: int64
+    UserProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        profile:
+          $ref: "#/components/schemas/UserProfile"
+        message:
+          type: string
+          nullable: true
+        timestamp:
+          type: integer
+          format: int64
+    StaffProfileResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        profile:
+          $ref: "#/components/schemas/StaffProfile"
+        message:
+          type: string
+          nullable: true
+        timestamp:
+          type: integer
+          format: int64
+    AdminCreatedResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        email:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+    CreateUserProfileRequest:
+      type: object
+      properties:
+        surname:
+          type: string
+        name:
+          type: string
+        patronymic:
+          type: string
+          nullable: true
+        gender:
+          $ref: "#/components/schemas/Gender"
+        dob:
+          type: string
+          format: date
+        dor:
+          type: string
+          format: date
+        citizenship:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        countryOfResidence:
+          type: string
+          nullable: true
+        cityOfResidence:
+          type: string
+          nullable: true
+        countryDuringEducation:
+          type: string
+          nullable: true
+        periodSpent:
+          $ref: "#/components/schemas/PeriodSpent"
+        kindOfActivity:
+          type: string
+          nullable: true
+        education:
+          type: string
+          nullable: true
+        purposeOfRegister:
+          type: string
+          nullable: true
+    UpdateUserProfileRequest:
+      type: object
+      properties:
+        surname:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        patronymic:
+          type: string
+          nullable: true
+        gender:
+          $ref: "#/components/schemas/Gender"
+        dob:
+          type: string
+          format: date
+        dor:
+          type: string
+          format: date
+        citizenship:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        countryOfResidence:
+          type: string
+          nullable: true
+        cityOfResidence:
+          type: string
+          nullable: true
+        countryDuringEducation:
+          type: string
+          nullable: true
+        periodSpent:
+          $ref: "#/components/schemas/PeriodSpent"
+        kindOfActivity:
+          type: string
+          nullable: true
+        education:
+          type: string
+          nullable: true
+        purposeOfRegister:
+          type: string
+          nullable: true
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+        surname:
+          type: string
+        name:
+          type: string
+        patronymic:
+          type: string
+          nullable: true
+        gender:
+          $ref: "#/components/schemas/Gender"
+        dob:
+          type: string
+          format: date
+        dor:
+          type: string
+          format: date
+        citizenship:
+          type: string
+          nullable: true
+        nationality:
+          type: string
+          nullable: true
+        countryOfResidence:
+          type: string
+          nullable: true
+        cityOfResidence:
+          type: string
+          nullable: true
+        countryDuringEducation:
+          type: string
+          nullable: true
+        periodSpent:
+          $ref: "#/components/schemas/PeriodSpent"
+        kindOfActivity:
+          type: string
+          nullable: true
+        education:
+          type: string
+          nullable: true
+        purposeOfRegister:
+          type: string
+          nullable: true
+    CreateStaffProfileRequest:
+      type: object
       properties:
         name:
           type: string
-          description: Name of the city
-          example: "Moscow"
-        population:
+        surname:
+          type: string
+        patronymic:
+          type: string
+          nullable: true
+    UpdateStaffProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          nullable: true
+        surname:
+          type: string
+          nullable: true
+        patronymic:
+          type: string
+          nullable: true
+    StaffProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+        name:
+          type: string
+        surname:
+          type: string
+        patronymic:
+          type: string
+          nullable: true
+    Gender:
+      type: string
+      enum:
+        - MALE
+        - FEMALE
+    UserRole:
+      type: string
+      enum:
+        - STUDENT
+        - ADMIN
+        - EXPERT
+        - CONTENT_MODERATOR
+    SystemLanguage:
+      type: string
+      enum:
+        - ENGLISH
+        - RUSSIAN
+        - UZBEK
+        - HINDI
+        - TAJIK
+        - CHINESE
+    PeriodSpent:
+      type: object
+      properties:
+        years:
           type: integer
-          description: Population of the city
-          example: 12506468
+        months:
+          type: integer

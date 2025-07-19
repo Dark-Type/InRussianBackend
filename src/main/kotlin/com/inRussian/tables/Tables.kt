@@ -2,6 +2,7 @@ package com.inRussian.tables
 
 import com.inRussian.models.users.SystemLanguage
 import com.inRussian.models.users.UserRole
+import com.inRussian.models.users.UserStatus
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.dao.id.UUIDTable
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
@@ -17,6 +18,8 @@ object Users : UUIDTable("users") {
     val lastActivityAt = timestamp("last_activity_at").nullable()
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
     val updatedAt = timestamp("updated_at").defaultExpression(CurrentTimestamp)
+    val passwordHash = varchar("password_hash", 255)
+    val status = enumerationByName("status", 25, UserStatus::class).default(UserStatus.ACTIVE)
 }
 
 

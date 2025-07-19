@@ -3,24 +3,23 @@ package com.inRussian.config
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
+import com.inRussian.models.users.UserRole
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
-import io.ktor.server.sessions.*
-import kotlinx.serialization.Serializable
+import io.ktor.server.response.*
+import java.util.*
+
 
 fun Application.configureSecurity() {
-    // Simple JWT config without OAuth for now
-    val jwtSecret = "secret" // Your original secret
-    val jwtAudience = "jwt-audience" // Your original audience
-    val jwtDomain = "http://jwt-provider-domain/" // Your original domain
-    val jwtRealm = "ktor sample app" // Your original realm
+    val jwtSecret = environment.config.propertyOrNull("jwt.secret")?.getString() ?: "your-secret-key"
+    val jwtAudience = environment.config.propertyOrNull("jwt.audience")?.getString() ?: "inrussian-api"
+    val jwtDomain = environment.config.propertyOrNull("jwt.domain")?.getString() ?: "http://localhost:8080/"
+    val jwtRealm = "InRussian API"
 
     install(Authentication) {
-        jwt {
+        jwt("auth-jwt") {
             realm = jwtRealm
             verifier(
                 JWT.require(Algorithm.HMAC256(jwtSecret))
@@ -29,20 +28,121 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
-                if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
+                val userId = credential.payload.getClaim("userId").asString()
+                val userRole = credential.payload.getClaim("role").asString()
+
+                if (credential.payload.audience.contains(jwtAudience) && userId != null && userRole != null) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { defaultScheme, realm ->
+                call.respondText(
+                    "Token is not valid or has expired",
+                    status = HttpStatusCode.Unauthorized
+                )
             }
         }
-    }
 
-    // Simple session config
-    install(Sessions) {
-        cookie<MySession>("MY_SESSION") {
-            cookie.extensions["SameSite"] = "lax"
-            cookie.secure = false // HTTP only for localhost
-            cookie.httpOnly = true
+        jwt("admin-jwt") {
+            realm = jwtRealm
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withAudience(jwtAudience)
+                    .withIssuer(jwtDomain)
+                    .build()
+            )
+            validate { credential ->
+                val userRole = credential.payload.getClaim("role").asString()
+                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.ADMIN.name) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { defaultScheme, realm ->
+                call.respondText("Admin access required", status = HttpStatusCode.Forbidden)
+            }
+        }
+
+        jwt("expert-jwt") {
+            realm = jwtRealm
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withAudience(jwtAudience)
+                    .withIssuer(jwtDomain)
+                    .build()
+            )
+            validate { credential ->
+                val userRole = credential.payload.getClaim("role").asString()
+                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.EXPERT.name) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { defaultScheme, realm ->
+                call.respondText("Expert access required", status = HttpStatusCode.Forbidden)
+            }
+        }
+
+        jwt("content-jwt") {
+            realm = jwtRealm
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withAudience(jwtAudience)
+                    .withIssuer(jwtDomain)
+                    .build()
+            )
+            validate { credential ->
+                val userRole = credential.payload.getClaim("role").asString()
+                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.CONTENT_MODERATOR.name) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { defaultScheme, realm ->
+                call.respondText("Content moderator access required", status = HttpStatusCode.Forbidden)
+            }
+        }
+
+        jwt("student-jwt") {
+            realm = jwtRealm
+            verifier(
+                JWT.require(Algorithm.HMAC256(jwtSecret))
+                    .withAudience(jwtAudience)
+                    .withIssuer(jwtDomain)
+                    .build()
+            )
+            validate { credential ->
+                val userRole = credential.payload.getClaim("role").asString()
+                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.STUDENT.name) {
+                    JWTPrincipal(credential.payload)
+                } else null
+            }
+            challenge { defaultScheme, realm ->
+                call.respondText("Student access required", status = HttpStatusCode.Forbidden)
+            }
         }
     }
 }
 
-@Serializable
-data class MySession(val count: Int = 0)
+object JWTConfig {
+    fun generateToken(
+        userId: String,
+        email: String,
+        role: UserRole,
+        secret: String,
+        audience: String,
+        issuer: String,
+        expiresInMinutes: Long = 1440
+    ): String {
+        return JWT.create()
+            .withAudience(audience)
+            .withIssuer(issuer)
+            .withClaim("userId", userId)
+            .withClaim("email", email)
+            .withClaim("role", role.name)
+            .withExpiresAt(Date(System.currentTimeMillis() + expiresInMinutes * 60000))
+            .withIssuedAt(Date())
+            .sign(Algorithm.HMAC256(secret))
+    }
+}
+
+fun JWTPrincipal.getUserId(): String? = payload.getClaim("userId").asString()
+fun JWTPrincipal.getUserRole(): UserRole? = payload.getClaim("role").asString()?.let { UserRole.valueOf(it) }
+fun JWTPrincipal.getUserEmail(): String? = payload.getClaim("email").asString()

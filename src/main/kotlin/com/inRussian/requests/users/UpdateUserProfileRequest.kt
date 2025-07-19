@@ -1,4 +1,4 @@
-package com.inRussian.requests.admin
+package com.inRussian.requests.users
 
 import com.inRussian.models.users.Gender
 import com.inRussian.models.users.PeriodSpent
@@ -10,8 +10,8 @@ data class UpdateUserProfileRequest(
     val name: String? = null,
     val patronymic: String? = null,
     val gender: Gender? = null,
-    val dob: String? = null, // YYYY-MM-DD
-    val dor: String? = null, // YYYY-MM-DD
+    val dob: String? = null,
+    val dor: String? = null,
     val citizenship: String? = null,
     val nationality: String? = null,
     val countryOfResidence: String? = null,

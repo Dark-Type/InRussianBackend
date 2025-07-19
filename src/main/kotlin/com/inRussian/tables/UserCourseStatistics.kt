@@ -4,6 +4,7 @@ import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
+
 object UserCourseStatistics : Table("user_course_statistics") {
     val userId = reference("user_id", Users)
     val courseId = reference("course_id", Courses)

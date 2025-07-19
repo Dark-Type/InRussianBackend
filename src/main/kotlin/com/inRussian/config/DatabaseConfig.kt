@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
+
 fun Application.configureDatabase() {
     val dbConfig = environment.config.config("postgres")
     val url = dbConfig.property("url").getString()
