@@ -9,8 +9,8 @@ data class Badge(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val description: String? = null,
-    val imageId: String,
+    val iconUrl: String,
     val badgeType: BadgeType,
-    val criteria: JsonElement? = null
+    val criteria: JsonElement? = null,
+    val createdAt: String
 )
-

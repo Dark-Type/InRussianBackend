@@ -1,15 +1,15 @@
 package com.inRussian.responses.content
 
 import com.inRussian.models.tasks.Task
-import com.inRussian.models.tasks.TaskAnswer
-import com.inRussian.models.tasks.TaskAnswerOption
-import com.inRussian.models.tasks.TaskContent
+import com.inRussian.models.tasks.TaskAnswerItem
+import com.inRussian.models.tasks.TaskAnswerOptionItem
+import com.inRussian.models.tasks.TaskContentItem
 import kotlinx.serialization.Serializable
 
 @Serializable
 data class FullTaskResponse(
     val task: Task,
-    val content: List<TaskContent>,
-    val answerOptions: List<TaskAnswerOption>,
-    val answer: TaskAnswer? = null
+    val content: List<TaskContentItem>,
+    val answerOptions: List<TaskAnswerOptionItem>,
+    val answer: TaskAnswerItem? = null
 )

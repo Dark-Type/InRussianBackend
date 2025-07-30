@@ -6,10 +6,10 @@ import java.util.*
 
 @Serializable
 data class Section(
-    val id: String = UUID.randomUUID().toString(),
+    val id: String,
     val courseId: String,
     val name: String,
-    val description: String? = null,
+    val description: String?,
     val orderNum: Int,
-    val createdAt: String = LocalDateTime.now().toString()
+    val createdAt: String
 )

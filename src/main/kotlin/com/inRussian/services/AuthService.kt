@@ -1,5 +1,7 @@
 package com.inRussian.services
 
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.inRussian.config.JWTConfig
 import com.inRussian.models.users.User
 import com.inRussian.models.users.UserInfo
@@ -12,6 +14,7 @@ import com.inRussian.responses.auth.LoginResponse
 import io.ktor.server.application.*
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
+import kotlin.toString
 
 class AuthService(
     private val userRepository: UserRepository,
@@ -40,10 +43,16 @@ class AuthService(
         )
    
         val createdUser = userRepository.create(user)
-        val token = JWTConfig.generateToken(
-            userId = createdUser.id,
-            email = createdUser.email,
-            role = createdUser.role,
+        val accessToken = JWTConfig.generateAccessToken(
+            userId = user.id,
+            email = user.email,
+            role = user.role,
+            secret = jwtSecret,
+            audience = jwtAudience,
+            issuer = jwtDomain
+        )
+        val refreshToken = JWTConfig.generateRefreshToken(
+            userId = user.id,
             secret = jwtSecret,
             audience = jwtAudience,
             issuer = jwtDomain
@@ -51,7 +60,8 @@ class AuthService(
 
         return Result.success(
             LoginResponse(
-                accessToken = token,
+                accessToken = accessToken,
+                refreshToken = refreshToken,
                 user = UserInfo(
                     id = createdUser.id,
                     email = createdUser.email,
@@ -80,14 +90,20 @@ class AuthService(
             phone = request.phone,
             role = request.role,
             systemLanguage = request.systemLanguage,
-            status = UserStatus.ACTIVE
+            status = UserStatus.PENDING_VERIFICATION
         )
 
         val createdUser = userRepository.create(user)
-        val token = JWTConfig.generateToken(
-            userId = createdUser.id,
-            email = createdUser.email,
-            role = createdUser.role,
+        val accessToken = JWTConfig.generateAccessToken(
+            userId = user.id,
+            email = user.email,
+            role = user.role,
+            secret = jwtSecret,
+            audience = jwtAudience,
+            issuer = jwtDomain
+        )
+        val refreshToken = JWTConfig.generateRefreshToken(
+            userId = user.id,
             secret = jwtSecret,
             audience = jwtAudience,
             issuer = jwtDomain
@@ -95,7 +111,8 @@ class AuthService(
 
         return Result.success(
             LoginResponse(
-                accessToken = token,
+                accessToken = accessToken,
+                refreshToken = refreshToken,
                 user = UserInfo(
                     id = createdUser.id,
                     email = createdUser.email,
@@ -106,6 +123,36 @@ class AuthService(
                 )
             )
         )
+    }
+    suspend fun refreshAccessToken(refreshToken: String): Result<String> {
+        return try {
+            val verifier = JWT
+                .require(Algorithm.HMAC256(jwtSecret))
+                .withAudience(jwtAudience)
+                .withIssuer(jwtDomain)
+                .build()
+            val principal = verifier.verify(refreshToken)
+
+            if (principal.getClaim("type").asString() != "refresh") {
+                return Result.failure(Exception("Токен не является refresh-токеном"))
+            }
+
+            val userId = principal.getClaim("userId").asString()
+            val user = userRepository.findById(userId)
+                ?: return Result.failure(Exception("Пользователь не найден"))
+
+            val newAccessToken = JWTConfig.generateAccessToken(
+                userId = user.id,
+                email = user.email,
+                role = user.role,
+                secret = jwtSecret,
+                audience = jwtAudience,
+                issuer = jwtDomain
+            )
+            Result.success(newAccessToken)
+        } catch (e: Exception) {
+            Result.failure(Exception("Недействительный или истёкший refresh-токен"))
+        }
     }
 
     suspend fun login(request: LoginRequest): Result<LoginResponse> {
@@ -126,7 +173,7 @@ class AuthService(
 
         userRepository.updateLastActivity(user.id)
 
-        val token = JWTConfig.generateToken(
+        val accessToken = JWTConfig.generateAccessToken(
             userId = user.id,
             email = user.email,
             role = user.role,
@@ -134,10 +181,16 @@ class AuthService(
             audience = jwtAudience,
             issuer = jwtDomain
         )
-
+        val refreshToken = JWTConfig.generateRefreshToken(
+            userId = user.id,
+            secret = jwtSecret,
+            audience = jwtAudience,
+            issuer = jwtDomain
+        )
         return Result.success(
             LoginResponse(
-                accessToken = token,
+                accessToken = accessToken,
+                refreshToken = refreshToken,
                 user = UserInfo(
                     id = user.id,
                     email = user.email,

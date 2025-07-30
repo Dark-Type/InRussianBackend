@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class FileType {
-    IMAGE, AUDIO, VIDEO
+    IMAGE, AUDIO, VIDEO, AVATAR
 }

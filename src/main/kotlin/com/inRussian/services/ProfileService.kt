@@ -6,15 +6,16 @@ import com.inRussian.models.users.UserRole
 import com.inRussian.repositories.StaffProfileRepository
 import com.inRussian.repositories.UserProfileRepository
 import com.inRussian.repositories.UserRepository
-import com.inRussian.requests.users.CreateStaffProfileRequest
-import com.inRussian.requests.users.CreateUserProfileRequest
-import com.inRussian.requests.users.UpdateStaffProfileRequest
-import com.inRussian.requests.users.UpdateUserProfileRequest
+import com.inRussian.requests.users.*
+import java.io.File
+import java.util.Collections
+import java.util.UUID
+import kotlin.collections.set
 
 class ProfileService(
     private val userProfileRepository: UserProfileRepository,
     private val staffProfileRepository: StaffProfileRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) {
 
     suspend fun createUserProfile(userId: String, request: CreateUserProfileRequest): Result<UserProfile> {
@@ -140,4 +141,11 @@ class ProfileService(
             ?: return Result.failure(Exception("Staff profile not found"))
         return Result.success(profile)
     }
+
+    suspend fun addUserLanguageSkill(userId: String, request: UserLanguageSkillRequest): Result<Boolean> {
+        val success = userProfileRepository.addSkill(userId, request)
+        return if (success) Result.success(true)
+        else Result.failure(Exception("Не удалось добавить языковой навык"))
+    }
+
 }

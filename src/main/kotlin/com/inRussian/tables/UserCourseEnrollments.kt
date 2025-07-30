@@ -12,6 +12,7 @@ object UserCourseEnrollments : Table("user_course_enrollments") {
     val completedAt = timestamp("completed_at").nullable()
     val currentSectionId = reference("current_section_id", Sections).nullable()
     val currentThemeId = reference("current_theme_id", Themes).nullable()
+    val progress = decimal("progress", 5, 2).default(0.00.toBigDecimal())
 
     override val primaryKey = PrimaryKey(userId, courseId)
 }

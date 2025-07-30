@@ -122,14 +122,14 @@ fun Application.configureSecurity() {
 }
 
 object JWTConfig {
-    fun generateToken(
+    fun generateAccessToken(
         userId: String,
         email: String,
         role: UserRole,
         secret: String,
         audience: String,
         issuer: String,
-        expiresInMinutes: Long = 1440
+        expiresInMinutes: Long = 120
     ): String {
         return JWT.create()
             .withAudience(audience)
@@ -138,6 +138,23 @@ object JWTConfig {
             .withClaim("email", email)
             .withClaim("role", role.name)
             .withExpiresAt(Date(System.currentTimeMillis() + expiresInMinutes * 60000))
+            .withIssuedAt(Date())
+            .sign(Algorithm.HMAC256(secret))
+    }
+
+    fun generateRefreshToken(
+        userId: String,
+        secret: String,
+        audience: String,
+        issuer: String,
+        expiresInDays: Long = 14
+    ): String {
+        return JWT.create()
+            .withAudience(audience)
+            .withIssuer(issuer)
+            .withClaim("userId", userId)
+            .withClaim("type", "refresh")
+            .withExpiresAt(Date(System.currentTimeMillis() + expiresInDays * 24 * 60 * 60000))
             .withIssuedAt(Date())
             .sign(Algorithm.HMAC256(secret))
     }

@@ -1,11 +1,12 @@
 package com.inRussian.repositories
 
 import com.inRussian.models.users.UserProfile
+import com.inRussian.requests.users.UserLanguageSkillRequest
 import com.inRussian.tables.UserProfiles
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-
+import com.inRussian.tables.UserLanguageSkills
 import java.util.*
 
 interface UserProfileRepository {
@@ -13,6 +14,7 @@ interface UserProfileRepository {
     suspend fun create(profile: UserProfile): UserProfile
     suspend fun update(profile: UserProfile): UserProfile
     suspend fun deleteByUserId(userId: String): Boolean
+    suspend fun addSkill(userId: String, skill: UserLanguageSkillRequest): Boolean
 }
 
 class ExposedUserProfileRepository : UserProfileRepository {
@@ -89,6 +91,17 @@ class ExposedUserProfileRepository : UserProfileRepository {
 
     override suspend fun deleteByUserId(userId: String): Boolean = transaction {
         UserProfiles.deleteWhere { UserProfiles.userId eq UUID.fromString(userId) } > 0
+    }
+    override suspend fun addSkill(userId: String, skill: UserLanguageSkillRequest): Boolean = transaction {
+        val result = UserLanguageSkills.insertIgnore {
+            it[UserLanguageSkills.userId] = UUID.fromString(userId)
+            it[language] = skill.language
+            it[understands] = skill.understands
+            it[speaks] = skill.speaks
+            it[reads] = skill.reads
+            it[writes] = skill.writes
+        }
+        result.resultedValues?.isNotEmpty() == true
     }
 }
 

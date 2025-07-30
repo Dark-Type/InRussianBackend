@@ -9,6 +9,7 @@ import com.inRussian.requests.users.StaffRegisterRequest
 import com.inRussian.requests.users.StudentRegisterRequest
 import com.inRussian.responses.auth.AdminCreatedResponse
 import com.inRussian.responses.auth.MessageResponse
+import com.inRussian.responses.auth.RefreshTokenRequest
 import com.inRussian.responses.auth.UserInfoData
 import com.inRussian.responses.auth.UserInfoResponse
 import com.inRussian.responses.common.ErrorResponse
@@ -25,6 +26,46 @@ fun Route.authRoutes(authService: AuthService) {
         post("/student/register") {
             val request = call.receive<StudentRegisterRequest>()
             val result = authService.registerStudent(request)
+
+            if (result.isSuccess) {
+                val response = result.getOrNull()
+                call.respond(HttpStatusCode.Created, response!!)
+            } else {
+                val error = result.exceptionOrNull()
+                call.respond(
+                    HttpStatusCode.BadRequest,
+                    ErrorResponse(
+                        success = false,
+                        error = error?.message ?: "Registration failed",
+                        code = null,
+                        timestamp = System.currentTimeMillis()
+                    )
+                )
+            }
+        }
+        post("/refresh") {
+            val request = call.receive<RefreshTokenRequest>()
+            val result = authService.refreshAccessToken(request.refreshToken)
+
+            if (result.isSuccess) {
+                val accessToken = result.getOrNull()
+                call.respond(HttpStatusCode.OK, mapOf("accessToken" to accessToken))
+            } else {
+                val error = result.exceptionOrNull()
+                call.respond(
+                    HttpStatusCode.Unauthorized,
+                    ErrorResponse(
+                        success = false,
+                        error = error?.message ?: "Refresh failed",
+                        code = null,
+                        timestamp = System.currentTimeMillis()
+                    )
+                )
+            }
+        }
+        post("/staff/register") {
+            val request = call.receive<StaffRegisterRequest>()
+            val result = authService.registerStaff(request)
 
             if (result.isSuccess) {
                 val response = result.getOrNull()

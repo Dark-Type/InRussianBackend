@@ -5,10 +5,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class PeriodSpent {
-    MONTH_MINUS, // MONTH-
-    SIX_MONTHS_MINUS, // 6MONTHS-
-    YEAR_MINUS, // YEAR-
-    YEAR_PLUS, // YEAR+
-    FIVE_YEAR_PLUS, // 5YEAR+
-    NEVER
+    MONTH_MINUS, MONTH_SIX_MONTHS_MINUS,  SIX_MONTHS, YEAR_MINUS,  YEAR_YEAR_PLUS,  YEAR_PLUS, FIVE_YEAR_PLUS,  FIVE_YEARS_PLUS, NEVER
 }

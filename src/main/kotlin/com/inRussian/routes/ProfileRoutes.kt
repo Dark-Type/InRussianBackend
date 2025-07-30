@@ -2,20 +2,22 @@ package com.inRussian.routes
 
 import com.inRussian.config.getUserId
 import com.inRussian.config.getUserRole
-import com.inRussian.requests.users.CreateStaffProfileRequest
-import com.inRussian.requests.users.CreateUserProfileRequest
-import com.inRussian.requests.users.UpdateStaffProfileRequest
-import com.inRussian.requests.users.UpdateUserProfileRequest
+import com.inRussian.requests.users.*
 import com.inRussian.responses.auth.StaffProfileResponse
 import com.inRussian.responses.auth.UserProfileResponse
 import com.inRussian.responses.common.ErrorResponse
 import com.inRussian.services.ProfileService
 import io.ktor.http.*
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
+import io.ktor.http.content.streamProvider
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import kotlin.text.get
+import kotlin.toString
 
 fun Route.profileRoutes(profileService: ProfileService) {
     route("/profiles") {
@@ -44,6 +46,17 @@ fun Route.profileRoutes(profileService: ProfileService) {
                                 error = error?.message ?: "Failed to create profile"
                             )
                         )
+                    }
+                }
+                post("/user/language-skills") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.getUserId()!!
+                    val request = call.receive<UserLanguageSkillRequest>()
+                    val result = profileService.addUserLanguageSkill(userId, request)
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.Created, mapOf("success" to true))
+                    } else {
+                        call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка"))
                     }
                 }
 
@@ -170,7 +183,6 @@ fun Route.profileRoutes(profileService: ProfileService) {
                 }
             }
 
-            // Staff Profile routes
             route("/staff") {
                 post {
                     val principal = call.principal<JWTPrincipal>()!!

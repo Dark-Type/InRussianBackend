@@ -13,7 +13,8 @@ data class ErrorResponse(
     val code: Int? = null,
     val timestamp: Long = System.currentTimeMillis()
 )
-
+@Serializable
+data class RefreshTokenRequest(val refreshToken: String)
 @Serializable
 data class MessageResponse(
     val success: Boolean = true,
@@ -25,6 +26,7 @@ data class MessageResponse(
 data class LoginResponse(
     val success: Boolean = true,
     val accessToken: String,
+    val refreshToken: String,
     val user: UserInfo,
     val message: String? = null,
     val timestamp: Long = System.currentTimeMillis()

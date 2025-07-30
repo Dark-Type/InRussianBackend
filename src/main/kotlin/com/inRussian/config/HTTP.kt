@@ -37,7 +37,7 @@ fun Application.configureHTTP() {
     install(Compression)
 
     routing {
-        openAPI(path = "openapi", swaggerFile = "openapi/documentation.yaml")
-        swaggerUI(path = "swagger")
+        openAPI(path = "openapi", swaggerFile = "openapi/InRussianBackend-openapi.yaml")
+        swaggerUI(path = "swagger", swaggerFile = "openapi/InRussianBackend-openapi.yaml")
     }
 }

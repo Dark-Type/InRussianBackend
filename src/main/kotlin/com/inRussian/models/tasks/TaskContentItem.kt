@@ -4,11 +4,13 @@ import kotlinx.serialization.Serializable
 import java.util.*
 
 @Serializable
-data class TaskAnswerOption(
+data class TaskContentItem(
     val id: String = UUID.randomUUID().toString(),
     val taskId: String,
-    val optionText: String? = null,
-    val optionAudioId: String? = null,
-    val isCorrect: Boolean = false,
+    val contentType: ContentType,
+    val contentId: String? = null,
+    val description: String? = null,
+    val transcription: String? = null,
+    val translation: String? = null,
     val orderNum: Int
 )

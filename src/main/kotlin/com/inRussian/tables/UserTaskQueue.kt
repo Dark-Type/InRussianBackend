@@ -9,6 +9,7 @@ object UserTaskQueue : UUIDTable("user_task_queue") {
     val userId = reference("user_id", Users)
     val taskId = reference("task_id", Tasks)
     val themeId = reference("theme_id", Themes)
+    val section = reference("section_id", Sections)
     val queuePosition = integer("queue_position")
     val isOriginalTask = bool("is_original_task").default(true)
     val isRetryTask = bool("is_retry_task").default(false)
