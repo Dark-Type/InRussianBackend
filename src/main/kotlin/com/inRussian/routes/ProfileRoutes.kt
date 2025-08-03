@@ -8,26 +8,37 @@ import com.inRussian.responses.auth.UserProfileResponse
 import com.inRussian.responses.common.ErrorResponse
 import com.inRussian.services.ProfileService
 import io.ktor.http.*
-import io.ktor.http.content.PartData
-import io.ktor.http.content.forEachPart
-import io.ktor.http.content.streamProvider
 import io.ktor.server.auth.*
 import io.ktor.server.response.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
-import kotlin.text.get
-import kotlin.toString
 
 fun Route.profileRoutes(profileService: ProfileService) {
     route("/profiles") {
         authenticate("auth-jwt") {
+            get("/avatar/{userId}") {
+                val userId = call.parameters["userId"]
+                if (userId == null) {
+                    call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing user ID"))
+                    return@get
+                }
+                val avatarId = profileService.getAvatarId(userId)
+                if (avatarId == null) {
+                    call.respond(HttpStatusCode.NotFound, ErrorResponse(error = "User not found or avatar not set"))
+                    return@get
+                }
+                call.respond(mapOf("avatarId" to avatarId))
+            }
+
             route("/user") {
                 post {
                     val principal = call.principal<JWTPrincipal>()!!
                     val userId = principal.getUserId()!!
+                    val userRole = principal.getUserRole()!!
+                    val targetUserId = call.request.queryParameters["targetUserId"]
                     val request = call.receive<CreateUserProfileRequest>()
-                    val result = profileService.createUserProfile(userId, request)
+                    val result = profileService.createUserProfile(userId, userRole, request, targetUserId)
 
                     if (result.isSuccess) {
                         val profile = result.getOrNull()
@@ -46,17 +57,6 @@ fun Route.profileRoutes(profileService: ProfileService) {
                                 error = error?.message ?: "Failed to create profile"
                             )
                         )
-                    }
-                }
-                post("/user/language-skills") {
-                    val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val request = call.receive<UserLanguageSkillRequest>()
-                    val result = profileService.addUserLanguageSkill(userId, request)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.Created, mapOf("success" to true))
-                    } else {
-                        call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка"))
                     }
                 }
 
@@ -117,9 +117,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     if (targetUserId == null) {
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = "Missing user ID"
-                            )
+                            ErrorResponse(error = "Missing user ID")
                         )
                         return@get
                     }
@@ -138,9 +136,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ErrorResponse(
-                                error = error?.message ?: "Profile not found"
-                            )
+                            ErrorResponse(error = error?.message ?: "Profile not found")
                         )
                     }
                 }
@@ -153,9 +149,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     if (targetUserId == null) {
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = "Missing user ID"
-                            )
+                            ErrorResponse(error = "Missing user ID")
                         )
                         return@put
                     }
@@ -175,10 +169,94 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.Forbidden,
-                            ErrorResponse(
-                                error = error?.message ?: "Access denied"
-                            )
+                            ErrorResponse(error = error?.message ?: "Access denied")
                         )
+                    }
+                }
+
+                route("/language-skills") {
+                    post {
+                        val principal = call.principal<JWTPrincipal>()!!
+                        val userId = principal.getUserId()!!
+                        val userRole = principal.getUserRole()!!
+                        val targetUserId = call.request.queryParameters["targetUserId"]
+                        val request = call.receive<UserLanguageSkillRequest>()
+                        val result = profileService.addUserLanguageSkill(userId, userRole, request, targetUserId)
+
+                        if (result.isSuccess) {
+                            call.respond(HttpStatusCode.Created, mapOf("success" to true))
+                        } else {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
+                            )
+                        }
+                    }
+
+                    get {
+                        val principal = call.principal<JWTPrincipal>()!!
+                        val userId = principal.getUserId()!!
+                        val userRole = principal.getUserRole()!!
+                        val targetUserId = call.request.queryParameters["targetUserId"]
+                        val result = profileService.getUserLanguageSkills(userId, userRole, targetUserId)
+
+                        if (result.isSuccess) {
+                            call.respond(HttpStatusCode.OK, mapOf("skills" to result.getOrNull()))
+                        } else {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
+                            )
+                        }
+                    }
+
+                    put("/{skillId}") {
+                        val principal = call.principal<JWTPrincipal>()!!
+                        val userId = principal.getUserId()!!
+                        val userRole = principal.getUserRole()!!
+                        val language = call.parameters["language"]
+                        val targetUserId = call.request.queryParameters["targetUserId"]
+
+                        if (language == null) {
+                            call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing skill ID"))
+                            return@put
+                        }
+
+                        val request = call.receive<UserLanguageSkillRequest>()
+                        val result = profileService.updateUserLanguageSkill(userId, userRole, language, request, targetUserId)
+
+                        if (result.isSuccess) {
+                            call.respond(HttpStatusCode.OK, mapOf("skill" to result.getOrNull()))
+                        } else {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
+                            )
+                        }
+                    }
+
+                    delete("/{skillId}") {
+                        val principal = call.principal<JWTPrincipal>()!!
+                        val userId = principal.getUserId()!!
+                        val userRole = principal.getUserRole()!!
+                        val language = call.parameters["language"]
+                        val targetUserId = call.request.queryParameters["targetUserId"]
+
+                        if (language == null) {
+                            call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing skill ID"))
+                            return@delete
+                        }
+
+                        val result = profileService.deleteUserLanguageSkill(userId, userRole, language, targetUserId)
+
+                        if (result.isSuccess) {
+                            call.respond(HttpStatusCode.OK, mapOf("success" to true))
+                        } else {
+                            call.respond(
+                                HttpStatusCode.BadRequest,
+                                ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
+                            )
+                        }
                     }
                 }
             }
@@ -187,8 +265,10 @@ fun Route.profileRoutes(profileService: ProfileService) {
                 post {
                     val principal = call.principal<JWTPrincipal>()!!
                     val userId = principal.getUserId()!!
+                    val userRole = principal.getUserRole()!!
+                    val targetUserId = call.request.queryParameters["targetUserId"]
                     val request = call.receive<CreateStaffProfileRequest>()
-                    val result = profileService.createStaffProfile(userId, request)
+                    val result = profileService.createStaffProfile(userId, userRole, request, targetUserId)
 
                     if (result.isSuccess) {
                         val profile = result.getOrNull()
@@ -203,9 +283,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = error?.message ?: "Failed to create staff profile"
-                            )
+                            ErrorResponse(error = error?.message ?: "Failed to create staff profile")
                         )
                     }
                 }
@@ -228,9 +306,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ErrorResponse(
-                                error = error?.message ?: "Staff profile not found"
-                            )
+                            ErrorResponse(error = error?.message ?: "Staff profile not found")
                         )
                     }
                 }
@@ -255,9 +331,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = error?.message ?: "Failed to update staff profile"
-                            )
+                            ErrorResponse(error = error?.message ?: "Failed to update staff profile")
                         )
                     }
                 }
@@ -267,9 +341,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     if (targetUserId == null) {
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = "Missing user ID"
-                            )
+                            ErrorResponse(error = "Missing user ID")
                         )
                         return@get
                     }
@@ -288,9 +360,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.NotFound,
-                            ErrorResponse(
-                                error = error?.message ?: "Staff profile not found"
-                            )
+                            ErrorResponse(error = error?.message ?: "Staff profile not found")
                         )
                     }
                 }
@@ -303,9 +373,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     if (targetUserId == null) {
                         call.respond(
                             HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = "Missing user ID"
-                            )
+                            ErrorResponse(error = "Missing user ID")
                         )
                         return@put
                     }
@@ -325,9 +393,7 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.Forbidden,
-                            ErrorResponse(
-                                error = error?.message ?: "Access denied"
-                            )
+                            ErrorResponse(error = error?.message ?: "Access denied")
                         )
                     }
                 }

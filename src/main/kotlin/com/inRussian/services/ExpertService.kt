@@ -11,7 +11,6 @@ import java.math.BigDecimal
 import java.time.LocalDate
 
 interface ExpertService {
-    // Студенты
     suspend fun getAllStudents(
         page: Int = 1,
         size: Int = 20,
@@ -25,7 +24,6 @@ interface ExpertService {
     suspend fun getStudentsWithProfiles(page: Int = 1, size: Int = 20): Result<List<Pair<User, UserProfile?>>>
     suspend fun getStudentsByCourse(courseId: String): Result<List<User>>
 
-    // Статистика
     suspend fun getStudentsCountByCourse(courseId: String): Result<Long>
     suspend fun getOverallStudentsCount(): Result<Long>
     suspend fun getCourseAverageTime(courseId: String): Result<Long?>
@@ -33,7 +31,6 @@ interface ExpertService {
     suspend fun getOverallAverageTime(): Result<Long?>
     suspend fun getOverallAverageProgress(): Result<BigDecimal?>
 
-    // Контент (только чтение)
     suspend fun getAllCourses(): Result<List<Course>>
     suspend fun getCourse(courseId: String): Result<Course?>
     suspend fun getSectionsByCourse(courseId: String): Result<List<Section>>

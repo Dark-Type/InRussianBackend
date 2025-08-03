@@ -4,7 +4,6 @@ import com.inRussian.models.badge.Badge
 import com.inRussian.tables.UserTaskProgress
 import com.inRussian.tables.UserTaskQueue
 import com.inRussian.models.content.*
-import com.inRussian.models.media.MediaFile
 import com.inRussian.models.progress.*
 import com.inRussian.models.tasks.*
 import com.inRussian.tables.*
@@ -12,7 +11,6 @@ import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.time.LocalDateTime
 import java.util.*
 import java.math.BigDecimal
 import kotlinx.serialization.Serializable
@@ -237,7 +235,7 @@ class ExposedStudentRepository : StudentRepository {
                 it[UserBadges.themeId] = themeId?.let { UUID.fromString(it) }
             }
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -370,7 +368,7 @@ class ExposedStudentRepository : StudentRepository {
                 it[progress] = BigDecimal.ZERO
             }
             true
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }

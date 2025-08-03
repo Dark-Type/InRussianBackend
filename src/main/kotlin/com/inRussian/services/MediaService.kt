@@ -82,9 +82,6 @@ class MediaService(private val mediaRepository: MediaRepository) {
     fun getMediaFile(
         mediaId: UUID
     ): Pair<MediaFileMeta, File>? {
-        val meta = mediaRepository.getMeta(mediaId) ?: return null
         return mediaRepository.getMedia(mediaId)
-
-
     }
 }

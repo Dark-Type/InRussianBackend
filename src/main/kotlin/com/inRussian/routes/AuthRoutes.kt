@@ -3,7 +3,6 @@ package com.inRussian.routes
 import com.inRussian.config.getUserEmail
 import com.inRussian.config.getUserId
 import com.inRussian.config.getUserRole
-import com.inRussian.models.users.UserStatus
 import com.inRussian.requests.auth.LoginRequest
 import com.inRussian.requests.users.StaffRegisterRequest
 import com.inRussian.requests.users.StudentRegisterRequest

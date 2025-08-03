@@ -14,7 +14,6 @@ import com.inRussian.responses.auth.LoginResponse
 import io.ktor.server.application.*
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
-import kotlin.toString
 
 class AuthService(
     private val userRepository: UserRepository,
@@ -41,7 +40,7 @@ class AuthService(
             systemLanguage = request.systemLanguage,
             status = UserStatus.ACTIVE
         )
-   
+
         val createdUser = userRepository.create(user)
         val accessToken = JWTConfig.generateAccessToken(
             userId = user.id,
@@ -124,6 +123,7 @@ class AuthService(
             )
         )
     }
+
     suspend fun refreshAccessToken(refreshToken: String): Result<String> {
         return try {
             val verifier = JWT
@@ -150,7 +150,7 @@ class AuthService(
                 issuer = jwtDomain
             )
             Result.success(newAccessToken)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             Result.failure(Exception("Недействительный или истёкший refresh-токен"))
         }
     }
@@ -162,9 +162,8 @@ class AuthService(
         when (user.status) {
             UserStatus.SUSPENDED -> return Result.failure(Exception("Account is suspended"))
             UserStatus.DEACTIVATED -> return Result.failure(Exception("Account is deactivated"))
-            UserStatus.PENDING_VERIFICATION -> return Result.failure(Exception("Please verify your email first"))
-            UserStatus.ACTIVE -> { /* Continue with login */
-            }
+            UserStatus.PENDING_VERIFICATION -> {}
+            UserStatus.ACTIVE -> {}
         }
 
         if (!BCrypt.checkpw(request.password, user.passwordHash)) {

@@ -13,8 +13,8 @@ fun Route.studentRoutes(studentService: StudentService) {
     authenticate("student-jwt") {
         route("/student") {
 
-            // Получить курсы с языком, совпадающим с системным языком пользователя
             get("/courses") {
+
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
                 val result = studentService.getCoursesByUserLanguage(userId)
@@ -48,7 +48,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить темы курса
             get("/courses/{courseId}/themes") {
                 val courseId = call.parameters["courseId"]
                 if (courseId == null) {
@@ -69,7 +68,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить задачи темы
             get("/themes/{themeId}/tasks") {
                 val themeId = call.parameters["themeId"]
                 if (themeId == null) {
@@ -90,7 +88,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить варианты задачи
             get("/tasks/{taskId}/variants") {
                 val taskId = call.parameters["taskId"]
                 if (taskId == null) {
@@ -111,7 +108,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить весь контент задачи
             get("/tasks/{taskId}/content") {
                 val taskId = call.parameters["taskId"]
                 if (taskId == null) {
@@ -132,7 +128,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить query задачи
             get("/tasks/{taskId}/query") {
                 val taskId = call.parameters["taskId"]
                 if (taskId == null) {
@@ -155,9 +150,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Обновить query задачи (PATCH)
-
-            // Получить бейджи пользователя
             get("/badges") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -174,7 +166,7 @@ fun Route.studentRoutes(studentService: StudentService) {
             post("/badges") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
-                val req = call.receive<Map<String, String>>() // или DTO
+                val req = call.receive<Map<String, String>>()
                 val badgeId = req["badgeId"]
                 val courseId = req["courseId"]
                 val themeId = req["themeId"]
@@ -209,7 +201,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить очередь задач пользователя
             get("/task-queue") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -224,7 +215,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Обновить позицию задачи в очереди
             patch("/task-queue/{queueId}/position") {
                 val queueId = call.parameters["queueId"]
                 val req = call.receive<Map<String, Int>>()
@@ -247,7 +237,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Удалить задачу из очереди
             delete("/task-queue/{queueId}") {
                 val queueId = call.parameters["queueId"]
                 if (queueId == null) {
@@ -268,7 +257,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить следующую задачу в очереди
             get("/task-queue/next") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -296,7 +284,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Создать прогресс задачи
             post("/tasks/{taskId}/progress") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -327,7 +314,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить прогресс задачи
             get("/tasks/{taskId}/progress") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -358,7 +344,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Обновить прогресс задачи
             patch("/tasks/{taskId}/progress") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -390,7 +375,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Отметить задачу как выполненную
             post("/tasks/{taskId}/complete") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -428,7 +412,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Записаться на курс
             post("/courses/{courseId}/enroll") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -459,7 +442,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить все курсы пользователя
             get("/enrollments") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -482,7 +464,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Отписаться от курса
             delete("/courses/{courseId}/enroll") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -513,7 +494,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить прогресс секции
             get("/sections/{sectionId}/progress") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -544,7 +524,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить прогресс курса
             get("/courses/{courseId}/progress") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val userId = principal.payload.getClaim("userId").asString()
@@ -609,7 +588,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-            // Получить ответ задачи
             get("/tasks/{taskId}/answer") {
                 val taskId = call.parameters["taskId"]
                 if (taskId == null) {

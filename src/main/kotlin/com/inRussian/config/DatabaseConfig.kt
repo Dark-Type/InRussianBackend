@@ -27,9 +27,11 @@ fun Application.configureDatabase() {
 
     Database.connect(dataSource)
     transaction {
-        SchemaUtils.create(Badges, Courses, CourseStatistics, MediaFiles, Sections, StaffProfiles, Users,
+        SchemaUtils.create(
+            Badges, Courses, CourseStatistics, MediaFiles, Sections, StaffProfiles, Users,
             TaskAnswerOptions, TaskAnswers, Tasks, Themes, TaskContent, UserBadges, UserCourseEnrollments,
-            UserCourseStatistics, UserLanguageSkills, UserProfiles, UserStatistics, UserTaskProgress, UserTaskQueue)
+            UserCourseStatistics, UserLanguageSkills, UserProfiles, UserStatistics, UserTaskProgress, UserTaskQueue
+        )
     }
     try {
         transaction {

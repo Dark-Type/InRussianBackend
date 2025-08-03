@@ -1,21 +1,14 @@
 package com.inRussian.services
 
 import com.inRussian.models.content.*
-import com.inRussian.models.media.MediaFile
-import com.inRussian.models.media.MediaFileMeta
 import com.inRussian.models.tasks.*
 import com.inRussian.repositories.ContentRepository
 import com.inRussian.requests.content.*
-
 import java.io.File
-import java.util.Collections
-import java.util.UUID
 
 class ContentService(private val contentRepository: ContentRepository) {
 
     private val uploadDir: String = "uploads"
-    val mediaStore: MutableMap<String, MediaFileMeta> = Collections.synchronizedMap(mutableMapOf())
-
     init {
         File(uploadDir).mkdirs()
     }

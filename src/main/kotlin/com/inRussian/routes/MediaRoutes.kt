@@ -5,11 +5,12 @@ import com.inRussian.config.getUserRole
 import com.inRussian.models.media.FileType
 import com.inRussian.services.MediaService
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.PartData
+import io.ktor.http.content.forEachPart
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
-import io.ktor.server.request.receiveChannel
-import io.ktor.server.request.receiveParameters
+import io.ktor.server.request.receiveMultipart
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondFile
 import io.ktor.server.routing.Route
@@ -18,10 +19,10 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
-import io.ktor.utils.io.toByteArray
 import com.inRussian.models.users.UserRole
+import io.ktor.utils.io.readRemaining
+import kotlinx.io.readByteArray
 import java.util.UUID
-import kotlin.text.get
 
 fun Route.mediaRoutes(mediaService: MediaService) {
     authenticate("auth-jwt") {
@@ -36,16 +37,41 @@ fun Route.mediaRoutes(mediaService: MediaService) {
                 val paramUserId = call.request.queryParameters["userId"]?.let(UUID::fromString)
                 val targetUserId = if (userRole == UserRole.ADMIN && paramUserId != null) paramUserId else tokenUserId
 
-                val params = call.receiveParameters()
-                val fileName =
-                    params["fileName"] ?: return@post call.respond(HttpStatusCode.BadRequest, "fileName required")
-                val mimeType =
-                    params["mimeType"] ?: return@post call.respond(HttpStatusCode.BadRequest, "mimeType required")
-                val fileType = params["fileType"]?.let { FileType.valueOf(it) }
-                    ?: return@post call.respond(HttpStatusCode.BadRequest, "fileType required")
-                val fileBytes = call.receiveChannel().toByteArray()
+                val multipart = call.receiveMultipart()
+                var fileName: String? = null
+                var mimeType: String? = null
+                var fileType: FileType? = null
+                var fileBytes: ByteArray? = null
 
-                val result = mediaService.saveMediaFile(fileName, mimeType, fileType, fileBytes, targetUserId, userRole)
+                multipart.forEachPart { part ->
+                    when (part) {
+                        is PartData.FormItem -> {
+                            when (part.name) {
+                                "fileName" -> fileName = part.value
+                                "mimeType" -> mimeType = part.value
+                                "fileType" -> fileType = FileType.valueOf(part.value)
+                            }
+                        }
+                        is PartData.FileItem -> {
+                            fileBytes = part.provider().readRemaining().readByteArray()
+                        }
+                        else -> {}
+                    }
+                }
+
+                if (fileName == null) return@post call.respond(HttpStatusCode.BadRequest, "fileName required")
+                if (mimeType == null) return@post call.respond(HttpStatusCode.BadRequest, "mimeType required")
+                if (fileType == null) return@post call.respond(HttpStatusCode.BadRequest, "fileType required")
+                if (fileBytes == null) return@post call.respond(HttpStatusCode.BadRequest, "file required")
+
+                val result = mediaService.saveMediaFile(
+                    fileName,
+                    mimeType,
+                    fileType,
+                    fileBytes,
+                    targetUserId,
+                    userRole
+                )
                 result.fold(
                     onSuccess = { call.respond(HttpStatusCode.Created, it) },
                     onFailure = { call.respond(HttpStatusCode.BadRequest, it.message ?: "Upload failed") }
@@ -53,10 +79,9 @@ fun Route.mediaRoutes(mediaService: MediaService) {
             }
 
             get("/{mediaId}") {
-                val userId = call.request.queryParameters["userId"]?.let(UUID::fromString)
-                    ?: return@get call.respond(HttpStatusCode.BadRequest, "userId required")
                 val mediaId = call.parameters["mediaId"]?.let(UUID::fromString)
                     ?: return@get call.respond(HttpStatusCode.BadRequest, "mediaId required")
+
                 val pair = mediaService.getMediaFile(mediaId)
                 if (pair != null) {
                     val (meta, file) = pair
@@ -77,15 +102,33 @@ fun Route.mediaRoutes(mediaService: MediaService) {
 
                 val mediaId = call.parameters["mediaId"]?.let(UUID::fromString)
                     ?: return@put call.respond(HttpStatusCode.BadRequest, "mediaId required")
-                val params = call.receiveParameters()
-                val fileName =
-                    params["fileName"] ?: return@put call.respond(HttpStatusCode.BadRequest, "fileName required")
-                val mimeType =
-                    params["mimeType"] ?: return@put call.respond(HttpStatusCode.BadRequest, "mimeType required")
-                val fileType = params["fileType"]?.let { FileType.valueOf(it) }
-                    ?: return@put call.respond(HttpStatusCode.BadRequest, "fileType required")
-                val fileBytes = call.receiveChannel().toByteArray()
 
+                val multipart = call.receiveMultipart()
+                var fileName: String? = null
+                var mimeType: String? = null
+                var fileType: FileType? = null
+                var fileBytes: ByteArray? = null
+
+                multipart.forEachPart { part ->
+                    when (part) {
+                        is PartData.FormItem -> {
+                            when (part.name) {
+                                "fileName" -> fileName = part.value
+                                "mimeType" -> mimeType = part.value
+                                "fileType" -> fileType = FileType.valueOf(part.value)
+                            }
+                        }
+                        is PartData.FileItem -> {
+                            fileBytes = part.provider().readRemaining().readByteArray()
+                        }
+                        else -> {}
+                    }
+                }
+
+                if (fileName == null) return@put call.respond(HttpStatusCode.BadRequest, "fileName required")
+                if (mimeType == null) return@put call.respond(HttpStatusCode.BadRequest, "mimeType required")
+                if (fileType == null) return@put call.respond(HttpStatusCode.BadRequest, "fileType required")
+                if (fileBytes == null) return@put call.respond(HttpStatusCode.BadRequest, "file required")
 
                 val result = mediaService.updateMediaFile(
                     mediaId,

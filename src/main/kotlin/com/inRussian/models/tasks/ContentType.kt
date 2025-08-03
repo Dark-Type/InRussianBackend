@@ -4,5 +4,5 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class ContentType {
-    AUDIO, IMAGE, TEXT, VIDEO
+    AUDIO, IMAGE, TEXT, VIDEO, AVATAR
 }

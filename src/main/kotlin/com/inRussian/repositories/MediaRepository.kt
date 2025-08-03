@@ -7,17 +7,12 @@ import com.inRussian.tables.MediaFiles.isActive
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.util.*
-import kotlin.and
-import kotlin.text.get
-import kotlin.text.set
-import kotlin.toString
 
-
-class MediaRepository(private val baseDir: String = "media") {
+class MediaRepository(baseDir: String = "media") {
 
     private val avatarsDir = "$baseDir/Avatars"
     private val contentDir = "$baseDir/Content"
@@ -35,7 +30,20 @@ class MediaRepository(private val baseDir: String = "media") {
         fileBytes: ByteArray
     ): MediaFileMeta {
         val mediaId = UUID.randomUUID()
-        val ext = File(fileName).extension
+        val ext = File(fileName).extension.ifEmpty {
+            when (mimeType) {
+                "image/jpeg", "image/jpg" -> "jpg"
+                "image/png" -> "png"
+                "image/gif" -> "gif"
+                "image/webp" -> "webp"
+                "video/mp4" -> "mp4"
+                "video/avi" -> "avi"
+                "audio/mp3" -> "mp3"
+                "audio/wav" -> "wav"
+                "application/pdf" -> "pdf"
+                else -> "bin"
+            }
+        }
         val safeFileName = "$mediaId.$ext"
         val dir = if (fileType == FileType.AVATAR) avatarsDir else contentDir
         val filePath = "$dir/$safeFileName"
@@ -50,8 +58,7 @@ class MediaRepository(private val baseDir: String = "media") {
                 it[MediaFiles.fileSize] = fileBytes.size.toLong()
                 it[MediaFiles.uploadedBy] = uploadedBy
                 it[MediaFiles.isActive] = true
-            }
-                .resultedValues!![0][MediaFiles.uploadedAt]
+            }.resultedValues!![0][MediaFiles.uploadedAt]
         }
 
         return MediaFileMeta(
@@ -61,39 +68,47 @@ class MediaRepository(private val baseDir: String = "media") {
             fileSize = fileBytes.size.toLong(),
             fileType = fileType,
             uploadedBy = uploadedBy?.toString(),
-            uploadedAt = uploadedAt
+            uploadedAt = uploadedAt.toString()
         )
     }
 
     fun getMedia(mediaId: UUID): Pair<MediaFileMeta, File>? {
         val meta = transaction {
-            MediaFiles.select((MediaFiles.id eq mediaId) and (isActive eq true))
-                .singleOrNull()
-                ?.let {
-                    MediaFileMeta(
-                        mediaId = it[MediaFiles.id].toString(),
-                        fileName = it[MediaFiles.fileName],
-                        mimeType = it[MediaFiles.mimeType],
-                        fileSize = it[MediaFiles.fileSize],
-                        fileType = FileType.valueOf(it[MediaFiles.fileType]),
-                        uploadedBy = it[MediaFiles.uploadedBy]?.toString(),
-                        uploadedAt = it[MediaFiles.uploadedAt]
-                    )
-                }
+            MediaFiles.selectAll().where {
+                (MediaFiles.id eq mediaId) and (isActive eq true)
+            }.singleOrNull()?.let {
+                MediaFileMeta(
+                    mediaId = it[MediaFiles.id].toString(),
+                    fileName = it[MediaFiles.fileName],
+                    mimeType = it[MediaFiles.mimeType],
+                    fileSize = it[MediaFiles.fileSize],
+                    fileType = FileType.valueOf(it[MediaFiles.fileType]),
+                    uploadedBy = it[MediaFiles.uploadedBy]?.toString(),
+                    uploadedAt = it[MediaFiles.uploadedAt].toString()
+                )
+            }
         } ?: return null
 
-        val ext = File(meta.fileName).extension
         val dir = if (meta.fileType == FileType.AVATAR) avatarsDir else contentDir
-        val file = File("$dir/$mediaId.$ext")
-        return if (file.exists()) meta to file else null
+        val file = findFileByMediaId(dir, mediaId)
+        return if (file?.exists() == true) meta to file else null
+    }
+
+    private fun findFileByMediaId(dir: String, mediaId: UUID): File? {
+        val directory = File(dir)
+        if (!directory.exists()) return null
+
+        return directory.listFiles()?.find { file ->
+            file.name.matches(Regex("^$mediaId\\.[a-zA-Z0-9]+$"))
+        }
     }
 
     fun findUserAvatar(userId: UUID): MediaFileMeta? = transaction {
-        MediaFiles.select(
+        MediaFiles.selectAll().where {
             (MediaFiles.fileType eq FileType.AVATAR.toString()) and
                     (MediaFiles.uploadedBy eq userId) and
-                    (MediaFiles.isActive eq true)
-        ).singleOrNull()?.let {
+                    (isActive eq true)
+        }.singleOrNull()?.let {
             MediaFileMeta(
                 mediaId = it[MediaFiles.id].toString(),
                 fileName = it[MediaFiles.fileName],
@@ -101,23 +116,22 @@ class MediaRepository(private val baseDir: String = "media") {
                 fileSize = it[MediaFiles.fileSize],
                 fileType = FileType.valueOf(it[MediaFiles.fileType]),
                 uploadedBy = it[MediaFiles.uploadedBy]?.toString(),
-                uploadedAt = it[MediaFiles.uploadedAt]
+                uploadedAt = it[MediaFiles.uploadedAt].toString()
             )
         }
     }
 
-
     fun deleteMedia(mediaId: UUID): Boolean {
         val meta = transaction {
-            MediaFiles.select((MediaFiles.id eq mediaId) and (isActive eq true))
-                .singleOrNull()
+            MediaFiles.selectAll().where {
+                (MediaFiles.id eq mediaId) and (isActive eq true)
+            }.singleOrNull()
         } ?: return false
 
-        val ext = File(meta[MediaFiles.fileName]).extension
         val fileType = FileType.valueOf(meta[MediaFiles.fileType])
         val dir = if (fileType == FileType.AVATAR) avatarsDir else contentDir
-        val file = File("$dir/$mediaId.$ext")
-        val deleted = file.delete()
+        val file = findFileByMediaId(dir, mediaId)
+        val deleted = file?.delete() ?: false
 
         transaction {
             MediaFiles.update({ MediaFiles.id eq mediaId }) {
@@ -135,13 +149,25 @@ class MediaRepository(private val baseDir: String = "media") {
         fileBytes: ByteArray
     ): MediaFileMeta {
         val oldMeta = getMeta(mediaId) ?: throw Exception("Файл не найден")
-        val ext = File(oldMeta.fileName).extension
         val dir = if (oldMeta.fileType == FileType.AVATAR) avatarsDir else contentDir
-        val oldFile = File("$dir/$mediaId.$ext")
-        oldFile.delete()
+        val oldFile = findFileByMediaId(dir, mediaId)
+        oldFile?.delete()
 
-        val newExt = File(fileName).extension
-        val newFile = File("$dir/$mediaId.$newExt")
+        val ext = File(fileName).extension.ifEmpty {
+            when (mimeType) {
+                "image/jpeg", "image/jpg" -> "jpg"
+                "image/png" -> "png"
+                "image/gif" -> "gif"
+                "image/webp" -> "webp"
+                "video/mp4" -> "mp4"
+                "video/avi" -> "avi"
+                "audio/mp3" -> "mp3"
+                "audio/wav" -> "wav"
+                "application/pdf" -> "pdf"
+                else -> "bin"
+            }
+        }
+        val newFile = File("$dir/$mediaId.$ext")
         newFile.writeBytes(fileBytes)
 
         transaction {
@@ -157,18 +183,18 @@ class MediaRepository(private val baseDir: String = "media") {
     }
 
     fun getMeta(mediaId: UUID): MediaFileMeta? = transaction {
-        MediaFiles.select((MediaFiles.id eq mediaId) and (isActive eq true))
-            .singleOrNull()
-            ?.let {
-                MediaFileMeta(
-                    mediaId = it[MediaFiles.id].toString(),
-                    fileName = it[MediaFiles.fileName],
-                    mimeType = it[MediaFiles.mimeType],
-                    fileSize = it[MediaFiles.fileSize],
-                    fileType = FileType.valueOf(it[MediaFiles.fileType]),
-                    uploadedBy = it[MediaFiles.uploadedBy]?.toString(),
-                    uploadedAt = it[MediaFiles.uploadedAt]
-                )
-            }
+        MediaFiles.selectAll().where {
+            (MediaFiles.id eq mediaId) and (isActive eq true)
+        }.singleOrNull()?.let {
+            MediaFileMeta(
+                mediaId = it[MediaFiles.id].toString(),
+                fileName = it[MediaFiles.fileName],
+                mimeType = it[MediaFiles.mimeType],
+                fileSize = it[MediaFiles.fileSize],
+                fileType = FileType.valueOf(it[MediaFiles.fileType]),
+                uploadedBy = it[MediaFiles.uploadedBy]?.toString(),
+                uploadedAt = it[MediaFiles.uploadedAt].toString()
+            )
+        }
     }
 }

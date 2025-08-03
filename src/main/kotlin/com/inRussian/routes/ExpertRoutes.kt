@@ -23,14 +23,14 @@ fun Route.expertRoutes(expertService: ExpertService) {
                     val createdFrom = call.request.queryParameters["createdFrom"]?.let {
                         try {
                             LocalDate.parse(it)
-                        } catch (e: DateTimeParseException) {
+                        } catch (_: DateTimeParseException) {
                             null
                         }
                     }
                     val createdTo = call.request.queryParameters["createdTo"]?.let {
                         try {
                             LocalDate.parse(it)
-                        } catch (e: DateTimeParseException) {
+                        } catch (_: DateTimeParseException) {
                             null
                         }
                     }
@@ -56,14 +56,14 @@ fun Route.expertRoutes(expertService: ExpertService) {
                     val createdFrom = call.request.queryParameters["createdFrom"]?.let {
                         try {
                             LocalDate.parse(it)
-                        } catch (e: DateTimeParseException) {
+                        } catch (_: DateTimeParseException) {
                             null
                         }
                     }
                     val createdTo = call.request.queryParameters["createdTo"]?.let {
                         try {
                             LocalDate.parse(it)
-                        } catch (e: DateTimeParseException) {
+                        } catch (_: DateTimeParseException) {
                             null
                         }
                     }
@@ -98,7 +98,8 @@ fun Route.expertRoutes(expertService: ExpertService) {
                             HttpStatusCode.InternalServerError,
                             ErrorResponse(
                                 success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить студентов с профилями",
+                                error = result.exceptionOrNull()?.message
+                                    ?: "Не удалось получить студентов с профилями",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -150,7 +151,8 @@ fun Route.expertRoutes(expertService: ExpertService) {
                             HttpStatusCode.InternalServerError,
                             ErrorResponse(
                                 success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить общее количество студентов",
+                                error = result.exceptionOrNull()?.message
+                                    ?: "Не удалось получить общее количество студентов",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -182,7 +184,8 @@ fun Route.expertRoutes(expertService: ExpertService) {
                             HttpStatusCode.InternalServerError,
                             ErrorResponse(
                                 success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить количество студентов курса",
+                                error = result.exceptionOrNull()?.message
+                                    ?: "Не удалось получить количество студентов курса",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -246,7 +249,8 @@ fun Route.expertRoutes(expertService: ExpertService) {
                             HttpStatusCode.InternalServerError,
                             ErrorResponse(
                                 success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить средний прогресс курса",
+                                error = result.exceptionOrNull()?.message
+                                    ?: "Не удалось получить средний прогресс курса",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -282,7 +286,8 @@ fun Route.expertRoutes(expertService: ExpertService) {
                             HttpStatusCode.InternalServerError,
                             ErrorResponse(
                                 success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить общий средний прогресс",
+                                error = result.exceptionOrNull()?.message
+                                    ?: "Не удалось получить общий средний прогресс",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -291,7 +296,6 @@ fun Route.expertRoutes(expertService: ExpertService) {
                 }
             }
 
-            // Все GET эндпоинты из ContentManager
             route("/content") {
                 get("/courses") {
                     val result = expertService.getAllCourses()

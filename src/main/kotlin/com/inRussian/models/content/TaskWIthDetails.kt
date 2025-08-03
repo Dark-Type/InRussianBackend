@@ -2,42 +2,6 @@ package com.inRussian.models.content
 
 import com.inRussian.models.tasks.*
 import kotlinx.serialization.Serializable
-import java.time.LocalDateTime
-
-@Serializable
-data class TaskWithDetails(
-    val id: String,
-    val themeId: String,
-    val name: String,
-    val taskType: TaskType,
-    val question: String,
-    val instructions: String?,
-    val isTraining: Boolean,
-    val orderNum: Int,
-    val createdAt: String,
-    val content: List<TaskContentItem> = emptyList(),
-    val answer: TaskAnswerItem? = null,
-    val answerOptions: List<TaskAnswerOptionItem> = emptyList()
-)
-
-@Serializable
-data class Report(
-    val id: String,
-    val description: String,
-    val taskId: String,
-    val reporterId: String,
-    val createdAt: String
-)
-
-@Serializable
-data class Theme(
-    val id: String,
-    val sectionId: String,
-    val name: String,
-    val description: String?,
-    val orderNum: Int,
-    val createdAt: String
-)
 
 @Serializable
 data class Section(
@@ -68,4 +32,20 @@ data class CountStats(
     val sectionsCount: Long,
     val themesCount: Long,
     val tasksCount: Long
+)
+
+@Serializable
+data class TaskWithDetails(
+    val id: String,
+    val themeId: String,
+    val name: String,
+    val taskType: TaskType,
+    val question: String,
+    val instructions: String?,
+    val isTraining: Boolean,
+    val orderNum: Int,
+    val createdAt: String,
+    val content: List<TaskContentItem> = emptyList(),
+    val answer: TaskAnswerItem? = null,
+    val answerOptions: List<TaskAnswerOptionItem> = emptyList()
 )

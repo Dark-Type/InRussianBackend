@@ -5,7 +5,6 @@ import com.inRussian.repositories.AdminRepository
 import com.inRussian.repositories.UserRepository
 import com.inRussian.requests.admin.UpdateUserRequest
 import com.inRussian.requests.users.*
-import java.math.BigDecimal
 import java.time.LocalDate
 
 class AdminService(
@@ -68,7 +67,6 @@ class AdminService(
         return authService.updateUserStatus(userId, status)
     }
 
-    // Statistics methods
     suspend fun getStudentsCountByCourse(courseId: String): Result<Long> {
         return try {
             val count = adminRepository.getStudentsCountByCourse(courseId)
@@ -120,6 +118,7 @@ class AdminService(
             Result.failure(e)
         }
     }
+
     suspend fun createUserProfileForUser(userId: String, request: CreateUserProfileRequest): Result<UserProfile> {
         return try {
             val profile = adminRepository.createUserProfile(userId, request)
@@ -163,7 +162,6 @@ class AdminService(
         }
     }
 
-    // Staff Profile methods
     suspend fun createStaffProfileForUser(userId: String, request: CreateStaffProfileRequest): Result<StaffProfile> {
         return try {
             val profile = adminRepository.createStaffProfile(userId, request)

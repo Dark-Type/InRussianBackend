@@ -1,6 +1,7 @@
 package com.inRussian.repositories
 
 import com.inRussian.models.users.UserProfile
+import com.inRussian.models.users.UserLanguageSkill
 import com.inRussian.requests.users.UserLanguageSkillRequest
 import com.inRussian.tables.UserProfiles
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -15,14 +16,15 @@ interface UserProfileRepository {
     suspend fun update(profile: UserProfile): UserProfile
     suspend fun deleteByUserId(userId: String): Boolean
     suspend fun addSkill(userId: String, skill: UserLanguageSkillRequest): Boolean
+    suspend fun getSkills(userId: String): List<UserLanguageSkill>
+    suspend fun updateSkill(skillId: String, userId: String, skill: UserLanguageSkillRequest): UserLanguageSkill?
+    suspend fun deleteSkill(skillId: String, userId: String): Boolean
 }
 
 class ExposedUserProfileRepository : UserProfileRepository {
 
     private fun ResultRow.toUserProfile() = UserProfile(
-        userId = this[
-
-            UserProfiles.userId].toString(),
+        userId = this[UserProfiles.userId].toString(),
         surname = this[UserProfiles.surname],
         name = this[UserProfiles.name],
         patronymic = this[UserProfiles.patronymic],
@@ -39,6 +41,16 @@ class ExposedUserProfileRepository : UserProfileRepository {
         education = this[UserProfiles.education],
         purposeOfRegister = this[UserProfiles.purposeOfRegister]
     )
+
+    private fun ResultRow.toUserLanguageSkill() = UserLanguageSkill(
+        userId = this[UserLanguageSkills.userId].toString(),
+        language = this[UserLanguageSkills.language],
+        understands = this[UserLanguageSkills.understands],
+        speaks = this[UserLanguageSkills.speaks],
+        reads = this[UserLanguageSkills.reads],
+        writes = this[UserLanguageSkills.writes]
+    )
+
 
     override suspend fun findByUserId(userId: String): UserProfile? = transaction {
         UserProfiles.selectAll().where { UserProfiles.userId eq UUID.fromString(userId) }
@@ -92,6 +104,7 @@ class ExposedUserProfileRepository : UserProfileRepository {
     override suspend fun deleteByUserId(userId: String): Boolean = transaction {
         UserProfiles.deleteWhere { UserProfiles.userId eq UUID.fromString(userId) } > 0
     }
+
     override suspend fun addSkill(userId: String, skill: UserLanguageSkillRequest): Boolean = transaction {
         val result = UserLanguageSkills.insertIgnore {
             it[UserLanguageSkills.userId] = UUID.fromString(userId)
@@ -103,5 +116,39 @@ class ExposedUserProfileRepository : UserProfileRepository {
         }
         result.resultedValues?.isNotEmpty() == true
     }
-}
 
+    override suspend fun getSkills(userId: String): List<UserLanguageSkill> = transaction {
+        UserLanguageSkills.selectAll().where { UserLanguageSkills.userId eq UUID.fromString(userId) }
+            .map { it.toUserLanguageSkill() }
+    }
+
+    override suspend fun updateSkill(
+        skillId: String,
+        userId: String,
+        skill: UserLanguageSkillRequest
+    ): UserLanguageSkill? = transaction {
+        val updated = UserLanguageSkills.update({
+            (UserLanguageSkills.userId eq UUID.fromString(userId)) and
+                    (UserLanguageSkills.language eq skillId)
+        }) {
+            it[understands] = skill.understands
+            it[speaks] = skill.speaks
+            it[reads] = skill.reads
+            it[writes] = skill.writes
+        }
+
+        if (updated > 0) {
+            UserLanguageSkills.selectAll().where {
+                (UserLanguageSkills.userId eq UUID.fromString(userId)) and
+                        (UserLanguageSkills.language eq skillId)
+            }.map { it.toUserLanguageSkill() }.firstOrNull()
+        } else null
+    }
+
+    override suspend fun deleteSkill(skillId: String, userId: String): Boolean = transaction {
+        UserLanguageSkills.deleteWhere {
+            (UserLanguageSkills.userId eq UUID.fromString(userId)) and
+                    (UserLanguageSkills.language eq skillId)
+        } > 0
+    }
+}

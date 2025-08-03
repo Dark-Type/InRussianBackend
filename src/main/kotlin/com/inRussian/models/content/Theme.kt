@@ -1,8 +1,6 @@
-package com.inRussian.models.courses
+package com.inRussian.models.content
 
 import kotlinx.serialization.Serializable
-import java.time.LocalDateTime
-import java.util.*
 
 @Serializable
 data class Theme(

@@ -1,12 +1,9 @@
 package com.inRussian.services
 
-import com.inRussian.models.*
 import com.inRussian.models.badge.Badge
 import com.inRussian.models.content.*
 import com.inRussian.models.tasks.*
-import com.inRussian.models.statistics.UserStatistics
 import com.inRussian.repositories.*
-import java.math.BigDecimal
 
 interface StudentService {
     suspend fun getCoursesByUserLanguage(userId: String): Result<List<Course>>
@@ -18,17 +15,16 @@ interface StudentService {
     suspend fun getTaskQuery(userId: String, taskId: String): Result<TaskWithDetails?>
     suspend fun getUserBadges(userId: String): Result<List<Badge>>
 
-    // Новые методы
     suspend fun createUserBadge(userId: String, badgeId: String, courseId: String?, themeId: String?): Result<Boolean>
     suspend fun deleteUserBadge(userId: String, badgeId: String): Result<Boolean>
-    suspend fun addTaskToQueue(request: com.inRussian.repositories.CreateTaskQueueRequest): Result<UserTaskQueueItem>
+    suspend fun addTaskToQueue(request: CreateTaskQueueRequest): Result<UserTaskQueueItem>
     suspend fun getTaskQueue(userId: String): Result<List<UserTaskQueueItem>>
     suspend fun updateTaskQueuePosition(queueId: String, newPosition: Int): Result<Boolean>
     suspend fun removeTaskFromQueue(queueId: String): Result<Boolean>
     suspend fun getNextTaskInQueue(userId: String): Result<UserTaskQueueItem?>
     suspend fun createTaskProgress(userId: String, taskId: String): Result<UserTaskProgressItem>
     suspend fun getTaskProgress(userId: String, taskId: String): Result<UserTaskProgressItem?>
-    suspend fun updateTaskProgress(userId: String, taskId: String, request: com.inRussian.repositories.UpdateTaskProgressRequest): Result<UserTaskProgressItem?>
+    suspend fun updateTaskProgress(userId: String, taskId: String, request: UpdateTaskProgressRequest): Result<UserTaskProgressItem?>
     suspend fun markTaskAsCompleted(userId: String, taskId: String, isCorrect: Boolean): Result<UserTaskProgressItem?>
     suspend fun enrollInCourse(userId: String, courseId: String): Result<Boolean>
     suspend fun getUserEnrollments(userId: String): Result<List<UserCourseEnrollmentItem>>
@@ -80,7 +76,7 @@ class StudentServiceImpl(
     override suspend fun deleteUserBadge(userId: String, badgeId: String) =
         runCatching { repository.deleteUserBadge(userId, badgeId) }
 
-    override suspend fun addTaskToQueue(request: com.inRussian.repositories.CreateTaskQueueRequest) =
+    override suspend fun addTaskToQueue(request: CreateTaskQueueRequest) =
         runCatching { repository.addTaskToQueue(request) }
 
     override suspend fun getTaskQueue(userId: String) =
@@ -101,7 +97,7 @@ class StudentServiceImpl(
     override suspend fun getTaskProgress(userId: String, taskId: String) =
         runCatching { repository.getTaskProgress(userId, taskId) }
 
-    override suspend fun updateTaskProgress(userId: String, taskId: String, request: com.inRussian.repositories.UpdateTaskProgressRequest) =
+    override suspend fun updateTaskProgress(userId: String, taskId: String, request: UpdateTaskProgressRequest) =
         runCatching { repository.updateTaskProgress(userId, taskId, request) }
 
     override suspend fun markTaskAsCompleted(userId: String, taskId: String, isCorrect: Boolean) =

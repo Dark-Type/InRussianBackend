@@ -38,8 +38,8 @@ import com.inRussian.services.MediaService
 
 
 fun Application.configureRouting() {
-    val mediaRepository : MediaRepository = MediaRepository()
-    val mediaService : MediaService = MediaService(mediaRepository)
+    val mediaRepository = MediaRepository()
+    val mediaService = MediaService(mediaRepository)
     val userRepository: UserRepository = ExposedUserRepository()
     val profileRepository: UserProfileRepository = ExposedUserProfileRepository()
     val staffRepository: StaffProfileRepository = ExposedStaffProfileRepository()
