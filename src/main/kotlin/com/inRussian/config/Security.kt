@@ -27,14 +27,19 @@ fun Application.configureSecurity() {
                     .withIssuer(jwtDomain)
                     .build()
             )
+
             validate { credential ->
+
                 val userId = credential.payload.getClaim("userId").asString()
                 val userRole = credential.payload.getClaim("role").asString()
 
                 if (credential.payload.audience.contains(jwtAudience) && userId != null && userRole != null) {
                     JWTPrincipal(credential.payload)
-                } else null
+                } else {
+                    null
+                }
             }
+
             challenge { defaultScheme, realm ->
                 call.respondText(
                     "Token is not valid or has expired",
@@ -42,7 +47,6 @@ fun Application.configureSecurity() {
                 )
             }
         }
-
         jwt("admin-jwt") {
             realm = jwtRealm
             verifier(
@@ -131,7 +135,14 @@ object JWTConfig {
         issuer: String,
         expiresInMinutes: Long = 120
     ): String {
-        return JWT.create()
+        println("=== GENERATING ACCESS TOKEN ===")
+        println("UserId: $userId")
+        println("Role: ${role.name}")
+        println("Secret: ${secret.take(10)}...")
+        println("Audience: $audience")
+        println("Issuer: $issuer")
+
+        val token = JWT.create()
             .withAudience(audience)
             .withIssuer(issuer)
             .withClaim("userId", userId)
@@ -140,6 +151,9 @@ object JWTConfig {
             .withExpiresAt(Date(System.currentTimeMillis() + expiresInMinutes * 60000))
             .withIssuedAt(Date())
             .sign(Algorithm.HMAC256(secret))
+
+        println("Generated token (first 50 chars): ${token.take(50)}...")
+        return token
     }
 
     fun generateRefreshToken(

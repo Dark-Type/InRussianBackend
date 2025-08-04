@@ -2,6 +2,7 @@ package com.inRussian.routes
 
 import com.inRussian.config.getUserId
 import com.inRussian.config.getUserRole
+import com.inRussian.requests.admin.UpdateUserRequest
 import com.inRussian.requests.users.*
 import com.inRussian.responses.auth.StaffProfileResponse
 import com.inRussian.responses.auth.UserProfileResponse
@@ -13,6 +14,10 @@ import io.ktor.server.response.*
 import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
+import org.slf4j.LoggerFactory
+
+
+private val logger = LoggerFactory.getLogger("ProfileRoutes")
 
 fun Route.profileRoutes(profileService: ProfileService) {
     route("/profiles") {
@@ -34,142 +39,186 @@ fun Route.profileRoutes(profileService: ProfileService) {
             route("/user") {
                 post {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val userRole = principal.getUserRole()!!
+                    val userId = principal.getUserId()
+                        ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val targetUserId = call.request.queryParameters["targetUserId"]
                     val request = call.receive<CreateUserProfileRequest>()
+
                     val result = profileService.createUserProfile(userId, userRole, request, targetUserId)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.Created,
                             UserProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "User profile created successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.BadRequest
+                        }
                         call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = error?.message ?: "Failed to create profile"
-                            )
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Failed to create profile")
                         )
                     }
                 }
 
                 get {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val result = profileService.getUserProfile(userId)
+                    val userId = principal.getUserId()
+                        ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+
+                    val result = profileService.getUserProfile(userId, userRole)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.OK,
                             UserProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "User profile retrieved successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.NotFound
+                        }
                         call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(
-                                error = error?.message ?: "Profile not found"
-                            )
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Profile not found")
                         )
                     }
                 }
 
                 put {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val userRole = principal.getUserRole()!!
+                    val userId = principal.getUserId()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val request = call.receive<UpdateUserProfileRequest>()
-                    val result = profileService.updateUserProfile(userId, request, userRole, userId)
+
+                    val result = profileService.updateUserProfile(userId, userRole, request)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.OK,
                             UserProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Profile updated successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.BadRequest
+                        }
                         call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                error = error?.message ?: "Failed to update profile"
-                            )
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Failed to update profile")
+                        )
+                    }
+                }
+                put("/base") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.getUserId()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val targetUserId = call.request.queryParameters["targetUserId"]
+                    val request = call.receive<UpdateUserRequest>()
+
+                    val result = profileService.updateUserBase(userId, userRole, request, targetUserId)
+
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, mapOf("success" to true))
+                    } else {
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.BadRequest
+                        }
+                        call.respond(
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Failed to update user base")
                         )
                     }
                 }
 
                 get("/{id}") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val currentUserId = principal.getUserId()
+                        ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val currentUserRole = principal.getUserRole()
+                        ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val targetUserId = call.parameters["id"]
+
                     if (targetUserId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(error = "Missing user ID")
-                        )
+                        call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing user ID"))
                         return@get
                     }
-                    val result = profileService.getUserProfile(targetUserId)
+
+                    val result = profileService.getUserProfile(currentUserId, currentUserRole, targetUserId)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.OK,
                             UserProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "User profile retrieved successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.NotFound
+                        }
                         call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(error = error?.message ?: "Profile not found")
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Profile not found")
                         )
                     }
                 }
 
                 put("/{id}") {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val currentUserId = principal.getUserId()!!
-                    val currentUserRole = principal.getUserRole()!!
+                    val currentUserId = principal.getUserId()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val currentUserRole = principal.getUserRole()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val targetUserId = call.parameters["id"]
+
                     if (targetUserId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(error = "Missing user ID")
-                        )
+                        call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing user ID"))
                         return@put
                     }
+
                     val request = call.receive<UpdateUserProfileRequest>()
-                    val result = profileService.updateUserProfile(targetUserId, request, currentUserRole, currentUserId)
+                    val result = profileService.updateUserProfile(currentUserId, currentUserRole, request, targetUserId)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.OK,
                             UserProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Profile updated successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.Forbidden,
-                            ErrorResponse(error = error?.message ?: "Access denied")
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Access denied")
                         )
                     }
                 }
@@ -177,17 +226,25 @@ fun Route.profileRoutes(profileService: ProfileService) {
                 route("/language-skills") {
                     post {
                         val principal = call.principal<JWTPrincipal>()!!
-                        val userId = principal.getUserId()!!
-                        val userRole = principal.getUserRole()!!
+                        val userId = principal.getUserId()
+                            ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                        val userRole = principal.getUserRole()
+                            ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                         val targetUserId = call.request.queryParameters["targetUserId"]
                         val request = call.receive<UserLanguageSkillRequest>()
+
                         val result = profileService.addUserLanguageSkill(userId, userRole, request, targetUserId)
 
                         if (result.isSuccess) {
                             call.respond(HttpStatusCode.Created, mapOf("success" to true))
                         } else {
+                            val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                                HttpStatusCode.Forbidden
+                            } else {
+                                HttpStatusCode.BadRequest
+                            }
                             call.respond(
-                                HttpStatusCode.BadRequest,
+                                statusCode,
                                 ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
                             )
                         }
@@ -195,16 +252,24 @@ fun Route.profileRoutes(profileService: ProfileService) {
 
                     get {
                         val principal = call.principal<JWTPrincipal>()!!
-                        val userId = principal.getUserId()!!
-                        val userRole = principal.getUserRole()!!
+                        val userId = principal.getUserId()
+                            ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                        val userRole = principal.getUserRole()
+                            ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                         val targetUserId = call.request.queryParameters["targetUserId"]
+
                         val result = profileService.getUserLanguageSkills(userId, userRole, targetUserId)
 
                         if (result.isSuccess) {
                             call.respond(HttpStatusCode.OK, mapOf("skills" to result.getOrNull()))
                         } else {
+                            val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                                HttpStatusCode.Forbidden
+                            } else {
+                                HttpStatusCode.BadRequest
+                            }
                             call.respond(
-                                HttpStatusCode.BadRequest,
+                                statusCode,
                                 ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
                             )
                         }
@@ -212,24 +277,32 @@ fun Route.profileRoutes(profileService: ProfileService) {
 
                     put("/{skillId}") {
                         val principal = call.principal<JWTPrincipal>()!!
-                        val userId = principal.getUserId()!!
-                        val userRole = principal.getUserRole()!!
-                        val language = call.parameters["language"]
+                        val userId = principal.getUserId()
+                            ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                        val userRole = principal.getUserRole()
+                            ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                        val skillId = call.parameters["skillId"]
                         val targetUserId = call.request.queryParameters["targetUserId"]
 
-                        if (language == null) {
+                        if (skillId == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing skill ID"))
                             return@put
                         }
 
                         val request = call.receive<UserLanguageSkillRequest>()
-                        val result = profileService.updateUserLanguageSkill(userId, userRole, language, request, targetUserId)
+                        val result =
+                            profileService.updateUserLanguageSkill(userId, userRole, skillId, request, targetUserId)
 
                         if (result.isSuccess) {
                             call.respond(HttpStatusCode.OK, mapOf("skill" to result.getOrNull()))
                         } else {
+                            val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                                HttpStatusCode.Forbidden
+                            } else {
+                                HttpStatusCode.BadRequest
+                            }
                             call.respond(
-                                HttpStatusCode.BadRequest,
+                                statusCode,
                                 ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
                             )
                         }
@@ -237,23 +310,30 @@ fun Route.profileRoutes(profileService: ProfileService) {
 
                     delete("/{skillId}") {
                         val principal = call.principal<JWTPrincipal>()!!
-                        val userId = principal.getUserId()!!
-                        val userRole = principal.getUserRole()!!
-                        val language = call.parameters["language"]
+                        val userId = principal.getUserId()
+                            ?: return@delete call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                        val userRole = principal.getUserRole()
+                            ?: return@delete call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                        val skillId = call.parameters["skillId"]
                         val targetUserId = call.request.queryParameters["targetUserId"]
 
-                        if (language == null) {
+                        if (skillId == null) {
                             call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing skill ID"))
                             return@delete
                         }
 
-                        val result = profileService.deleteUserLanguageSkill(userId, userRole, language, targetUserId)
+                        val result = profileService.deleteUserLanguageSkill(userId, userRole, skillId, targetUserId)
 
                         if (result.isSuccess) {
                             call.respond(HttpStatusCode.OK, mapOf("success" to true))
                         } else {
+                            val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                                HttpStatusCode.Forbidden
+                            } else {
+                                HttpStatusCode.BadRequest
+                            }
                             call.respond(
-                                HttpStatusCode.BadRequest,
+                                statusCode,
                                 ErrorResponse(error = result.exceptionOrNull()?.message ?: "Ошибка")
                             )
                         }
@@ -264,136 +344,177 @@ fun Route.profileRoutes(profileService: ProfileService) {
             route("/staff") {
                 post {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val userRole = principal.getUserRole()!!
+                    val userId = principal.getUserId()
+                        ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val targetUserId = call.request.queryParameters["targetUserId"]
                     val request = call.receive<CreateStaffProfileRequest>()
+
                     val result = profileService.createStaffProfile(userId, userRole, request, targetUserId)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.Created,
                             StaffProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Staff profile created successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.BadRequest
+                        }
                         call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(error = error?.message ?: "Failed to create staff profile")
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Failed to create staff profile")
                         )
                     }
                 }
 
                 get {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val result = profileService.getStaffProfile(userId)
+                    val userId = principal.getUserId()
+                    val userRole = principal.getUserRole()
+
+                    logger.info("GET /profiles/staff - UserId: $userId, UserRole: $userRole")
+
+                    if (userId == null || userRole == null) {
+                        logger.warn("Invalid token - userId: $userId, userRole: $userRole")
+                        return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    }
+
+                    val result = profileService.getStaffProfile(userId, userRole)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
+                        logger.info("Staff profile retrieved successfully for user: $userId")
                         call.respond(
                             HttpStatusCode.OK,
                             StaffProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Staff profile retrieved successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        logger.error("Failed to get staff profile for user: $userId, error: ${result.exceptionOrNull()?.message}")
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.NotFound
+                        }
                         call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(error = error?.message ?: "Staff profile not found")
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Staff profile not found")
                         )
                     }
                 }
 
                 put {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val userId = principal.getUserId()!!
-                    val userRole = principal.getUserRole()!!
+                    val userId = principal.getUserId()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val request = call.receive<UpdateStaffProfileRequest>()
-                    val result = profileService.updateStaffProfile(userId, request, userRole, userId)
+
+                    val result = profileService.updateStaffProfile(userId, userRole, request)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.OK,
                             StaffProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Staff profile updated successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.BadRequest
+                        }
                         call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(error = error?.message ?: "Failed to update staff profile")
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Failed to update staff profile")
                         )
                     }
                 }
 
                 get("/{id}") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val currentUserId = principal.getUserId()
+                    val currentUserRole = principal.getUserRole()
                     val targetUserId = call.parameters["id"]
+
+                    logger.info("GET /profiles/staff/{id} - currentUserId: $currentUserId, currentUserRole: $currentUserRole, targetUserId: $targetUserId")
+
+                    if (currentUserId == null || currentUserRole == null) {
+                        logger.warn("Invalid token - currentUserId: $currentUserId, currentUserRole: $currentUserRole")
+                        return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    }
+
                     if (targetUserId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(error = "Missing user ID")
-                        )
+                        logger.warn("Missing user ID in path")
+                        call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing user ID"))
                         return@get
                     }
-                    val result = profileService.getStaffProfile(targetUserId)
+
+                    val result = profileService.getStaffProfile(currentUserId, currentUserRole, targetUserId)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
+                        logger.info("Staff profile retrieved successfully - currentUserId: $currentUserId, targetUserId: $targetUserId")
                         call.respond(
                             HttpStatusCode.OK,
                             StaffProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Staff profile retrieved successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
+                        logger.error("Failed to get staff profile - currentUserId: $currentUserId, targetUserId: $targetUserId, error: ${result.exceptionOrNull()?.message}")
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.NotFound
+                        }
                         call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(error = error?.message ?: "Staff profile not found")
+                            statusCode,
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Staff profile not found")
                         )
                     }
                 }
 
                 put("/{id}") {
                     val principal = call.principal<JWTPrincipal>()!!
-                    val currentUserId = principal.getUserId()!!
-                    val currentUserRole = principal.getUserRole()!!
+                    val currentUserId = principal.getUserId()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val currentUserRole = principal.getUserRole()
+                        ?: return@put call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     val targetUserId = call.parameters["id"]
+
                     if (targetUserId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(error = "Missing user ID")
-                        )
+                        call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing user ID"))
                         return@put
                     }
+
                     val request = call.receive<UpdateStaffProfileRequest>()
-                    val result = profileService.updateStaffProfile(targetUserId, request, currentUserRole, currentUserId)
+                    val result =
+                        profileService.updateStaffProfile(currentUserId, currentUserRole, request, targetUserId)
 
                     if (result.isSuccess) {
-                        val profile = result.getOrNull()
                         call.respond(
                             HttpStatusCode.OK,
                             StaffProfileResponse(
-                                profile = profile!!,
+                                profile = result.getOrNull()!!,
                                 message = "Staff profile updated successfully"
                             )
                         )
                     } else {
-                        val error = result.exceptionOrNull()
                         call.respond(
                             HttpStatusCode.Forbidden,
-                            ErrorResponse(error = error?.message ?: "Access denied")
+                            ErrorResponse(error = result.exceptionOrNull()?.message ?: "Access denied")
                         )
                     }
                 }

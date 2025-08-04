@@ -33,6 +33,7 @@ import io.ktor.server.application.*
 import io.ktor.server.routing.*
 
 import com.inRussian.routes.adminRoutes
+import com.inRussian.routes.contentManagerRoutes
 import com.inRussian.routes.mediaRoutes
 import com.inRussian.services.MediaService
 
@@ -51,7 +52,6 @@ fun Application.configureRouting() {
     val contentService = ContentService(contentRepository)
     val expertService: ExpertService = ExpertServiceImpl(
         adminRepository = adminRepository,
-        contentRepository = contentRepository
     )
 
     val studentRepository: StudentRepository = ExposedStudentRepository()
@@ -61,6 +61,7 @@ fun Application.configureRouting() {
         adminRoutes(adminService)
         profileRoutes(profileService)
         contentRoutes(contentService)
+        contentManagerRoutes(contentService)
         expertRoutes(expertService)
         studentRoutes(studentService)
         mediaRoutes(mediaService)

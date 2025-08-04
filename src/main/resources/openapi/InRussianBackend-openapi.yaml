@@ -1,26 +1,32 @@
 openapi: "3.1.0"
 info:
+  version: "1.0.1"
   title: "InRussianBackend API"
   description: "API для проекта InRussian, которое используется для /домен вебсайта/ и приложения InRussian для Android и iOS."
-  version: "1.0.0"
 servers:
-  - url: "http://InRussianBackend"
+  - url: "http://localhost:8080"
 tags:
   - name: admin
     description: Маршруты для администраторов \(управление пользователями, статистика, контент\)
   - name: auth
     description: Аутентификация и авторизация пользователей \(регистрация, вход, выход\)
   - name: content
-    description: Маршруты для управления контентом \(курсы, секции, темы, задачи, отчёты и медиафайлы\), требуется роль CONTENT_MANAGER
+    description: Маршруты для получения контента
+  - name: content_manager
+    description: Маршруты для управления контентом \(курсы, секции, задачи, отчеты\)
   - name: expert
     description: Маршруты для экспертов \(просмотр задач, проверка ответов, статистика\)
   - name: profile
     description: Маршруты для управления профилями пользователей \(создание, обновление, удаление профилей\)
   - name: student
     description: Маршруты для студентов \(курсы, задачи, прогресс, бейджи и др.\)
+  - name: media
+    description: Маршруты для работы с медиафайлами
+
 paths:
   /admin/statistics/course/{courseId}:
     get:
+      tags: [ admin ]
       description: ""
       parameters:
         - name: "courseId"
@@ -40,16 +46,16 @@ paths:
                   description: ""
                   value:
                     success: false
-                    error: null
-                    code: null
-                    timestamp: null
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
                 Example#2:
-                    description: ""
-                    value:
-                      success: false
-                      error: "Missing course ID"
-                      code: "null"
-                      timestamp: "null"
+                  description: ""
+                  value:
+                    success: false
+                    error: "Missing course ID"
+                    code: "null"
+                    timestamp: "null"
         "200":
           description: "OK"
           content:
@@ -58,6 +64,7 @@ paths:
                 $ref: "#/components/schemas/Map_String"
   /admin/statistics/overall:
     get:
+      tags: [ admin ]
       description: ""
       responses:
         "200":
@@ -82,6 +89,7 @@ paths:
                     timestamp: "null"
   /admin/statistics/students/course/{courseId}:
     get:
+      tags: [ admin ]
       description: ""
       parameters:
         - name: "courseId"
@@ -119,6 +127,7 @@ paths:
                 $ref: "#/components/schemas/Map_String"
   /admin/statistics/students/overall:
     get:
+      tags: [ admin ]
       description: ""
       responses:
         "200":
@@ -143,6 +152,7 @@ paths:
                     timestamp: "null"
   /admin/users:
     get:
+      tags: [ admin ]
       description: ""
       parameters:
         - name: "page"
@@ -205,6 +215,7 @@ paths:
                     timestamp: "null"
   /admin/users/{userId}:
     get:
+      tags: [ admin ]
       description: ""
       parameters:
         - name: "userId"
@@ -246,455 +257,10 @@ paths:
                     success: false
                     error: "null"
                     code: "null"
-                    timestamp: "null"
-    put:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateUserRequest"
-        required: true
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-                Example#2:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/User"
-  /admin/users/{userId}/profile/staff:
-    delete:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/MessageResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    message: "Staff profile deleted successfully"
-                    timestamp: "null"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-    get:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/StaffProfileResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    profile: "null"
-                    message: "Staff profile retrieved successfully"
-                    timestamp: "null"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-    post:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateStaffProfileRequest"
-        required: true
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-                Example#2:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "201":
-          description: "Created"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/StaffProfileResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    profile: "null"
-                    message: "Staff profile created successfully"
-                    timestamp: "null"
-    put:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateStaffProfileRequest"
-        required: true
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-                Example#2:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/StaffProfileResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    profile: "null"
-                    message: "Staff profile updated successfully"
-                    timestamp: "null"
-  /admin/users/{userId}/profile/user:
-    delete:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/MessageResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    message: "User profile deleted successfully"
-                    timestamp: "null"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-    get:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/UserProfileResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    profile: "null"
-                    message: "User profile retrieved successfully"
-                    timestamp: "null"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-    post:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateUserProfileRequest"
-        required: true
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-                Example#2:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "201":
-          description: "Created"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/UserProfileResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    profile: "null"
-                    message: "User profile created successfully"
-                    timestamp: "null"
-    put:
-      description: ""
-      parameters:
-        - name: "userId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UpdateUserProfileRequest"
-        required: true
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-                Example#2:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Missing user ID"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/UserProfileResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: true
-                    profile: "null"
-                    message: "User profile updated successfully"
                     timestamp: "null"
   /admin/users/{userId}/status:
     put:
+      tags: [ admin ]
       description: ""
       parameters:
         - name: "userId"
@@ -752,6 +318,7 @@ paths:
                     timestamp: "null"
   /admin/users/count:
     get:
+      tags: [ admin ]
       description: ""
       parameters:
         - name: "role"
@@ -792,6 +359,7 @@ paths:
                     timestamp: "null"
   /admin/users/staff:
     post:
+      tags: [ admin ]
       description: ""
       requestBody:
         content:
@@ -822,6 +390,7 @@ paths:
                     timestamp: "null"
   /auth/admin/create-initial:
     post:
+      tags: [ admin ]
       description: ""
       responses:
         "201":
@@ -854,6 +423,7 @@ paths:
                     timestamp: "null"
   /auth/login:
     post:
+      tags: [ auth ]
       description: ""
       requestBody:
         content:
@@ -884,6 +454,7 @@ paths:
                     timestamp: "null"
   /auth/logout:
     post:
+      tags: [ auth ]
       description: ""
       responses:
         "200":
@@ -901,6 +472,7 @@ paths:
                     timestamp: "null"
   /auth/me:
     get:
+      tags: [ auth ]
       description: ""
       responses:
         "200":
@@ -919,6 +491,7 @@ paths:
                     timestamp: "null"
   /auth/refresh:
     post:
+      tags: [ auth ]
       description: ""
       requestBody:
         content:
@@ -949,6 +522,7 @@ paths:
                     timestamp: "null"
   /auth/staff/register:
     post:
+      tags: [ auth ]
       description: ""
       requestBody:
         content:
@@ -979,6 +553,7 @@ paths:
                     timestamp: "null"
   /auth/student/register:
     post:
+      tags: [ auth ]
       description: ""
       requestBody:
         content:
@@ -1009,6 +584,7 @@ paths:
                     timestamp: "null"
   /content/courses:
     get:
+      tags: [ content ]
       description: ""
       responses:
         "200":
@@ -1029,6 +605,7 @@ paths:
                 Example#1:
                   value: "Failed to get courses"
     post:
+      tags: [ content_manager ]
       description: ""
       requestBody:
         content:
@@ -1068,6 +645,7 @@ paths:
                     timestamp: "null"
   /content/courses/{courseId}:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "courseId"
@@ -1101,6 +679,7 @@ paths:
                 Example#1:
                   value: "Course not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "courseId"
@@ -1134,6 +713,7 @@ paths:
                 Example#1:
                   value: "Course not found"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "courseId"
@@ -1172,179 +752,9 @@ paths:
               examples:
                 Example#1:
                   value: "Course not found"
-  /content/media:
-    get:
-      description: ""
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/MediaFileMeta"
-    post:
-      description: ""
-      responses:
-        "201":
-          description: "Created"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/MediaFileMeta"
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось загрузить файл"
-                    code: "null"
-                    timestamp: "null"
-  /content/media/{mediaId}:
-    delete:
-      description: ""
-      parameters:
-        - name: "mediaId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Не указан mediaId"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Медиафайл не найден"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/Map_String"
-    get:
-      description: ""
-      parameters:
-        - name: "mediaId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан mediaId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK <br> A file response"
-          content:
-            application/*:
-              schema:
-                type: "object"
-                format: "binary"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Файл не найден"
-                    code: "null"
-                    timestamp: "null"
-    put:
-      description: ""
-      parameters:
-        - name: "mediaId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-        - name: "uploadedBy"
-          in: "query"
-          required: false
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Не указан mediaId"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Медиафайл не найден"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/MediaFileMeta"
   /content/reports:
-    get:
-      description: ""
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Report"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Failed to get reports"
     post:
+      tags: [ content ]
       description: ""
       requestBody:
         content:
@@ -1383,40 +793,8 @@ paths:
                     code: "null"
                     timestamp: "null"
   /content/reports/{reportId}:
-    delete:
-      description: ""
-      parameters:
-        - name: "reportId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Missing report ID"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/Map_String"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Report not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "reportId"
@@ -1451,6 +829,7 @@ paths:
                   value: "Report not found"
   /content/sections:
     post:
+      tags: [ content_manager ]
       description: ""
       requestBody:
         content:
@@ -1481,6 +860,7 @@ paths:
                     timestamp: "null"
   /content/sections/{sectionId}:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "sectionId"
@@ -1514,6 +894,7 @@ paths:
                 Example#1:
                   value: "Section not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "sectionId"
@@ -1547,6 +928,7 @@ paths:
                 Example#1:
                   value: "Section not found"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "sectionId"
@@ -1587,6 +969,7 @@ paths:
                   value: "Section not found"
   /content/sections/by-course/{courseId}:
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "courseId"
@@ -1623,6 +1006,7 @@ paths:
                   value: "Failed to get sections"
   /content/stats:
     get:
+      tags: [ content ]
       description: ""
       responses:
         "200":
@@ -1642,6 +1026,7 @@ paths:
                   value: "Failed to get statistics"
   /content/stats/course/{courseId}/tasks-count:
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "courseId"
@@ -1676,6 +1061,7 @@ paths:
                   value: "Failed to get tasks count"
   /content/stats/section/{sectionId}/tasks-count:
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "sectionId"
@@ -1710,6 +1096,7 @@ paths:
                   value: "Failed to get tasks count"
   /content/stats/theme/{themeId}/tasks-count:
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "themeId"
@@ -1744,6 +1131,7 @@ paths:
                   value: "Failed to get tasks count"
   /content/tasks:
     post:
+      tags: [ content_manager ]
       description: ""
       requestBody:
         content:
@@ -1774,6 +1162,7 @@ paths:
                     timestamp: "null"
   /content/tasks/{taskId}:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -1807,6 +1196,7 @@ paths:
                 Example#1:
                   value: "Task not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "taskId"
@@ -1840,6 +1230,7 @@ paths:
                 Example#1:
                   value: "Task not found"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -1880,6 +1271,7 @@ paths:
                   value: "Task not found"
   /content/tasks/{taskId}/answer:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -1913,6 +1305,7 @@ paths:
                 Example#1:
                   value: "TaskAnswer not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "taskId"
@@ -1946,6 +1339,7 @@ paths:
                 Example#1:
                   value: "TaskAnswer not found"
     post:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -1983,6 +1377,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/TaskAnswerItem"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -2023,6 +1418,7 @@ paths:
                   value: "TaskAnswer not found"
   /content/tasks/{taskId}/content:
     post:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -2061,6 +1457,7 @@ paths:
                 $ref: "#/components/schemas/TaskContentItem"
   /content/tasks/{taskId}/content/{contentId}:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "contentId"
@@ -2099,6 +1496,7 @@ paths:
                 Example#1:
                   value: "TaskContent not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "contentId"
@@ -2137,6 +1535,7 @@ paths:
                 Example#1:
                   value: "TaskContent not found"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "contentId"
@@ -2182,6 +1581,7 @@ paths:
                   value: "TaskContent not found"
   /content/tasks/{taskId}/options:
     post:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "taskId"
@@ -2220,6 +1620,7 @@ paths:
                 $ref: "#/components/schemas/TaskAnswerOptionItem"
   /content/tasks/{taskId}/options/{optionId}:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "optionId"
@@ -2258,6 +1659,7 @@ paths:
                 Example#1:
                   value: "TaskAnswerOption not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "optionId"
@@ -2296,6 +1698,7 @@ paths:
                 Example#1:
                   value: "TaskAnswerOption not found"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "optionId"
@@ -2341,6 +1744,7 @@ paths:
                   value: "TaskAnswerOption not found"
   /content/themes:
     post:
+      tags: [ content_manager ]
       description: ""
       requestBody:
         content:
@@ -2371,6 +1775,7 @@ paths:
                     timestamp: "null"
   /content/themes/{themeId}:
     delete:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "themeId"
@@ -2404,6 +1809,7 @@ paths:
                 Example#1:
                   value: "Theme not found"
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "themeId"
@@ -2437,6 +1843,7 @@ paths:
                 Example#1:
                   value: "Theme not found"
     put:
+      tags: [ content_manager ]
       description: ""
       parameters:
         - name: "themeId"
@@ -2477,6 +1884,7 @@ paths:
                   value: "Theme not found"
   /content/themes/{themeId}/tasks:
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "themeId"
@@ -2513,6 +1921,7 @@ paths:
                   value: "Failed to get tasks"
   /content/themes/by-section/{sectionId}:
     get:
+      tags: [ content ]
       description: ""
       parameters:
         - name: "sectionId"
@@ -2547,142 +1956,9 @@ paths:
               examples:
                 Example#1:
                   value: "Failed to get themes"
-  /expert/content/courses:
-    get:
-      description: ""
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Course"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-  /expert/content/courses/{courseId}:
-    get:
-      description: ""
-      parameters:
-        - name: "courseId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан courseId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/Course"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Курс не найден"
-                    code: "null"
-                    timestamp: "null"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-  /expert/content/reports:
-    get:
-      description: ""
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Report"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-  /expert/content/stats:
-    get:
-      description: ""
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/CountStats"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
   /expert/statistics/course/{courseId}/average-progress:
     get:
+      tags: [ expert ]
       description: ""
       parameters:
         - name: "courseId"
@@ -2727,6 +2003,7 @@ paths:
                     timestamp: "null"
   /expert/statistics/course/{courseId}/average-time:
     get:
+      tags: [ expert ]
       description: ""
       parameters:
         - name: "courseId"
@@ -2771,6 +2048,7 @@ paths:
                     timestamp: "null"
   /expert/statistics/overall-average-progress:
     get:
+      tags: [ expert ]
       description: ""
       responses:
         "200":
@@ -2795,6 +2073,7 @@ paths:
                     timestamp: "null"
   /expert/statistics/overall-average-time:
     get:
+      tags: [ expert ]
       description: ""
       responses:
         "200":
@@ -2817,8 +2096,9 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
-  /expert/statistics/students/course/{courseId}:
+  /expert/statistics/course/{courseId}/students-count:
     get:
+      tags: [ expert ]
       description: ""
       parameters:
         - name: "courseId"
@@ -2861,8 +2141,10 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
+
   /expert/statistics/students/overall:
     get:
+      tags: [ expert ]
       description: ""
       responses:
         "200":
@@ -2887,6 +2169,7 @@ paths:
                     timestamp: "null"
   /expert/students:
     get:
+      tags: [ expert ]
       description: ""
       parameters:
         - name: "page"
@@ -2944,6 +2227,7 @@ paths:
                     timestamp: "null"
   /expert/students/count:
     get:
+      tags: [ expert ]
       description: ""
       parameters:
         - name: "createdFrom"
@@ -2977,115 +2261,62 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
-  /expert/students/course/{courseId}:
-    get:
+  /media/{mediaId}:
+    delete:
+      tags: [ media ]
       description: ""
       parameters:
-        - name: "courseId"
+        - name: "userId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "mediaId"
           in: "path"
           required: true
           schema:
             type: "string"
       responses:
+        "401":
+          description: "Unauthorized"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Invalid token"
+                Example#2:
+                  value: "Invalid token"
         "400":
           description: "Bad Request"
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: "string"
               examples:
                 Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан courseId"
-                    code: "null"
-                    timestamp: "null"
+                  value: "mediaId required"
         "200":
           description: "OK"
           content:
             '*/*':
               schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/User"
-        "500":
-          description: "Internal Server Error"
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Deleted"
+        "404":
+          description: "Not Found"
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: "string"
               examples:
                 Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-  /expert/students/with-profiles:
+                  value: "File not found or access denied"
     get:
-      description: ""
-      parameters:
-        - name: "page"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-        - name: "size"
-          in: "query"
-          required: false
-          schema:
-            type: "integer"
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Pair"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "null"
-                    code: "null"
-                    timestamp: "null"
-  /profiles/media:
-    post:
-      description: ""
-      responses:
-        "201":
-          description: "Created"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/MediaFileMeta"
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось загрузить файл"
-                    code: "null"
-                    timestamp: "null"
-  /profiles/media/{mediaId}:
-    get:
+      tags: [ media ]
       description: ""
       parameters:
         - name: "mediaId"
@@ -3099,15 +2330,10 @@ paths:
           content:
             '*/*':
               schema:
-                $ref: "#/components/schemas/ErrorResponse"
+                type: "string"
               examples:
                 Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан mediaId"
-                    code: "null"
-                    timestamp: "null"
+                  value: "mediaId required"
         "200":
           description: "OK <br> A file response"
           content:
@@ -3120,17 +2346,150 @@ paths:
           content:
             '*/*':
               schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "File not found or access denied"
+    put:
+      tags: [ media ]
+      description: ""
+      parameters:
+        - name: "userId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "mediaId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "401":
+          description: "Unauthorized"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Invalid token"
+                Example#2:
+                  value: "Invalid token"
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "file required"
+                Example#2:
+                  value: "fileType required"
+                Example#3:
+                  value: "mimeType required"
+                Example#4:
+                  value: "fileName required"
+                Example#5:
+                  value: "mediaId required"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MediaFileMeta"
+  /media/upload:
+    post:
+      tags: [ media ]
+      description: ""
+      parameters:
+        - name: "userId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "401":
+          description: "Unauthorized"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Invalid token"
+                Example#2:
+                  value: "Invalid token"
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "file required"
+                Example#2:
+                  value: "fileType required"
+                Example#3:
+                  value: "mimeType required"
+                Example#4:
+                  value: "fileName required"
+        "201":
+          description: "Created"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/MediaFileMeta"
+  /profiles/avatar/{userId}:
+    get:
+      tags: [ profile ]
+      description: ""
+      parameters:
+        - name: "userId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
                 $ref: "#/components/schemas/ErrorResponse"
               examples:
                 Example#1:
                   description: ""
                   value:
                     success: false
-                    error: "Файл не найден"
+                    error: "Missing user ID"
                     code: "null"
                     timestamp: "null"
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "User not found or avatar not set"
+                    code: "null"
+                    timestamp: "null"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
   /profiles/staff:
     get:
+      tags: [ profile ]
       description: ""
       responses:
         "200":
@@ -3147,6 +2506,20 @@ paths:
                     profile: "null"
                     message: "Staff profile retrieved successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "404":
           description: "Not Found"
           content:
@@ -3162,7 +2535,14 @@ paths:
                     code: "null"
                     timestamp: "null"
     post:
+      tags: [ profile ]
       description: ""
+      parameters:
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
       requestBody:
         content:
           application/json:
@@ -3184,6 +2564,20 @@ paths:
                     profile: "null"
                     message: "Staff profile created successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "400":
           description: "Bad Request"
           content:
@@ -3199,6 +2593,7 @@ paths:
                     code: "null"
                     timestamp: "null"
     put:
+      tags: [ profile ]
       description: ""
       requestBody:
         content:
@@ -3221,6 +2616,20 @@ paths:
                     profile: "null"
                     message: "Staff profile updated successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "400":
           description: "Bad Request"
           content:
@@ -3237,6 +2646,7 @@ paths:
                     timestamp: "null"
   /profiles/staff/{id}:
     get:
+      tags: [ profile ]
       description: ""
       parameters:
         - name: "id"
@@ -3273,6 +2683,20 @@ paths:
                     profile: "null"
                     message: "Staff profile retrieved successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "404":
           description: "Not Found"
           content:
@@ -3288,6 +2712,7 @@ paths:
                     code: "null"
                     timestamp: "null"
     put:
+      tags: [ profile ]
       description: ""
       parameters:
         - name: "id"
@@ -3344,8 +2769,60 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
+  /profiles/user/base:
+    put:
+      tags: [ profile ]
+      description: ""
+      parameters:
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+        required: true
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
   /profiles/user:
     get:
+      tags: [ profile ]
       description: ""
       responses:
         "200":
@@ -3362,6 +2839,20 @@ paths:
                     profile: "null"
                     message: "User profile retrieved successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "404":
           description: "Not Found"
           content:
@@ -3377,7 +2868,14 @@ paths:
                     code: "null"
                     timestamp: "null"
     post:
+      tags: [ profile ]
       description: ""
+      parameters:
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
       requestBody:
         content:
           application/json:
@@ -3399,6 +2897,20 @@ paths:
                     profile: "null"
                     message: "User profile created successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "400":
           description: "Bad Request"
           content:
@@ -3414,6 +2926,7 @@ paths:
                     code: "null"
                     timestamp: "null"
     put:
+      tags: [ profile ]
       description: ""
       requestBody:
         content:
@@ -3436,6 +2949,20 @@ paths:
                     profile: "null"
                     message: "Profile updated successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "400":
           description: "Bad Request"
           content:
@@ -3452,6 +2979,7 @@ paths:
                     timestamp: "null"
   /profiles/user/{id}:
     get:
+      tags: [ profile ]
       description: ""
       parameters:
         - name: "id"
@@ -3488,6 +3016,20 @@ paths:
                     profile: "null"
                     message: "User profile retrieved successfully"
                     timestamp: "null"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "404":
           description: "Not Found"
           content:
@@ -3503,6 +3045,7 @@ paths:
                     code: "null"
                     timestamp: "null"
     put:
+      tags: [ profile ]
       description: ""
       parameters:
         - name: "id"
@@ -3559,22 +3102,37 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
-  /profiles/user/user/language-skills:
-    post:
+  /profiles/user/language-skills:
+    get:
+      tags: [ profile ]
       description: ""
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/UserLanguageSkillRequest"
-        required: true
+      parameters:
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
       responses:
-        "201":
-          description: "Created"
+        "200":
+          description: "OK"
           content:
             '*/*':
               schema:
                 $ref: "#/components/schemas/Map_String"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
         "400":
           description: "Bad Request"
           content:
@@ -3589,10 +3147,206 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
+    post:
+      tags: [ profile ]
+      description: ""
+      parameters:
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLanguageSkillRequest"
+        required: true
+      responses:
+        "201":
+          description: "Created"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+  /profiles/user/language-skills/{skillId}:
+    delete:
+      tags: [ profile ]
+      description: ""
+      parameters:
+        - name: "skillId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+                Example#2:
+                  description: ""
+                  value:
+                    success: false
+                    error: "Missing skill ID"
+                    code: "null"
+                    timestamp: "null"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+    put:
+      tags: [ profile ]
+      description: ""
+      parameters:
+        - name: "skillId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+        - name: "targetUserId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLanguageSkillRequest"
+        required: true
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+                Example#2:
+                  description: ""
+                  value:
+                    success: false
+                    error: "Missing skill ID"
+                    code: "null"
+                    timestamp: "null"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
+        "403":
+          description: "Forbidden"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "null"
+                    code: "null"
+                    timestamp: "null"
+  /student/courses:
+    get:
+      tags: [ student ]
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Course"
+        "500":
+          description: "Internal Server Error"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "Не удалось получить курсы"
+                    code: "null"
+                    timestamp: "null"
   /student/badges:
     get:
-      description: "Обновить query задачи (PATCH) <br> Получить бейджи пользовател\
-        я"
+      tags: [ student ]
+      description: ""
       responses:
         "200":
           description: "OK"
@@ -3617,6 +3371,7 @@ paths:
                     code: "null"
                     timestamp: "null"
     post:
+      tags: [ student ]
       description: ""
       requestBody:
         content:
@@ -3659,36 +3414,10 @@ paths:
                     error: "Не удалось добавить бейдж"
                     code: "null"
                     timestamp: "null"
-  /student/courses:
-    get:
-      description: "Получить курсы с языком, совпадающим с системным языком пользо\
-        вателя"
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Course"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить курсы"
-                    code: "null"
-                    timestamp: "null"
   /student/courses/{courseId}/enroll:
     delete:
-      description: "Отписаться от курса"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "courseId"
           in: "path"
@@ -3745,7 +3474,8 @@ paths:
                     code: "null"
                     timestamp: "null"
     post:
-      description: "Записаться на курс"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "courseId"
           in: "path"
@@ -3803,7 +3533,8 @@ paths:
                     timestamp: "null"
   /student/courses/{courseId}/progress:
     get:
-      description: "Получить прогресс курса"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "courseId"
           in: "path"
@@ -3859,101 +3590,10 @@ paths:
                     error: "Не удалось получить прогресс курса"
                     code: "null"
                     timestamp: "null"
-  /student/courses/{courseId}/sections:
-    get:
-      description: "Получить секции курса"
-      parameters:
-        - name: "courseId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан courseId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Section"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить секции"
-                    code: "null"
-                    timestamp: "null"
-  /student/courses/{courseId}/themes:
-    get:
-      description: "Получить темы курса"
-      parameters:
-        - name: "courseId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан courseId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/Theme"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить темы"
-                    code: "null"
-                    timestamp: "null"
   /student/enrollments:
     get:
-      description: "Получить все курсы пользователя"
+      tags: [ student ]
+      description: ""
       responses:
         "200":
           description: "OK"
@@ -3991,93 +3631,10 @@ paths:
                     error: "Не удалось получить курсы пользователя"
                     code: "null"
                     timestamp: "null"
-  /student/media:
-    get:
-      description: "Получить медиафайлы"
-      responses:
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/MediaFile"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить медиафайлы"
-                    code: "null"
-                    timestamp: "null"
-  /student/media/{mediaId}:
-    get:
-      description: "Получить медиафайл по id"
-      parameters:
-        - name: "mediaId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан mediaId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/MediaFile"
-        "404":
-          description: "Not Found"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Медиафайл не найден"
-                    code: "null"
-                    timestamp: "null"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить медиафайл"
-                    code: "null"
-                    timestamp: "null"
   /student/sections/{sectionId}/progress:
     get:
-      description: "Получить прогресс секции"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "sectionId"
           in: "path"
@@ -4135,7 +3692,8 @@ paths:
                     timestamp: "null"
   /student/task-queue:
     get:
-      description: "Получить очередь задач пользователя"
+      tags: [ student ]
+      description: ""
       responses:
         "200":
           description: "OK"
@@ -4160,6 +3718,7 @@ paths:
                     code: "null"
                     timestamp: "null"
     post:
+      tags: [ student ]
       description: ""
       requestBody:
         content:
@@ -4190,7 +3749,8 @@ paths:
                     timestamp: "null"
   /student/task-queue/{queueId}:
     delete:
-      description: "Удалить задачу из очереди"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "queueId"
           in: "path"
@@ -4234,7 +3794,8 @@ paths:
                     timestamp: "null"
   /student/task-queue/{queueId}/position:
     patch:
-      description: "Обновить позицию задачи в очереди"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "queueId"
           in: "path"
@@ -4284,7 +3845,8 @@ paths:
                     timestamp: "null"
   /student/task-queue/next:
     get:
-      description: "Получить следующую задачу в очереди"
+      tags: [ student ]
+      description: ""
       responses:
         "200":
           description: "OK"
@@ -4322,7 +3884,8 @@ paths:
                     timestamp: "null"
   /student/tasks/{taskId}/answer:
     get:
-      description: "Получить ответ задачи"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4380,7 +3943,8 @@ paths:
                     timestamp: "null"
   /student/tasks/{taskId}/complete:
     post:
-      description: "Отметить задачу как выполненную"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4442,55 +4006,10 @@ paths:
                     error: "Не удалось отметить задачу как выполненную"
                     code: "null"
                     timestamp: "null"
-  /student/tasks/{taskId}/content:
-    get:
-      description: "Получить весь контент задачи"
-      parameters:
-        - name: "taskId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан taskId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/TaskContentItem"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить контент задачи"
-                    code: "null"
-                    timestamp: "null"
   /student/tasks/{taskId}/progress:
     get:
-      description: "Получить прогресс задачи"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4547,7 +4066,8 @@ paths:
                     code: "null"
                     timestamp: "null"
     patch:
-      description: "Обновить прогресс задачи"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4610,7 +4130,8 @@ paths:
                     code: "null"
                     timestamp: "null"
     post:
-      description: "Создать прогресс задачи"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4668,7 +4189,8 @@ paths:
                     timestamp: "null"
   /student/tasks/{taskId}/query:
     get:
-      description: "Получить query задачи"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4712,7 +4234,8 @@ paths:
                     timestamp: "null"
   /student/tasks/{taskId}/report:
     post:
-      description: "Создать отчёт на задачу"
+      tags: [ student ]
+      description: ""
       parameters:
         - name: "taskId"
           in: "path"
@@ -4772,98 +4295,6 @@ paths:
                   value:
                     success: false
                     error: "Не удалось создать отчёт"
-                    code: "null"
-                    timestamp: "null"
-  /student/tasks/{taskId}/variants:
-    get:
-      description: "Получить варианты задачи"
-      parameters:
-        - name: "taskId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан taskId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/TaskAnswerOptionItem"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить варианты задачи"
-                    code: "null"
-                    timestamp: "null"
-  /student/themes/{themeId}/tasks:
-    get:
-      description: "Получить задачи темы"
-      parameters:
-        - name: "themeId"
-          in: "path"
-          required: true
-          schema:
-            type: "string"
-      responses:
-        "400":
-          description: "Bad Request"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не указан themeId"
-                    code: "null"
-                    timestamp: "null"
-        "200":
-          description: "OK"
-          content:
-            '*/*':
-              schema:
-                type: "array"
-                items:
-                  $ref: "#/components/schemas/TaskWithDetails"
-        "500":
-          description: "Internal Server Error"
-          content:
-            '*/*':
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-              examples:
-                Example#1:
-                  description: ""
-                  value:
-                    success: false
-                    error: "Не удалось получить задачи"
                     code: "null"
                     timestamp: "null"
 components:
@@ -4946,42 +4377,6 @@ components:
         - "status"
         - "createdAt"
         - "updatedAt"
-    UpdateUserRequest:
-      type: "object"
-      properties:
-        phone:
-          type: "string"
-          nullable: true
-        role:
-          type: "string"
-          nullable: true
-          enum:
-            - "STUDENT"
-            - "EXPERT"
-            - "CONTENT_MODERATOR"
-            - "ADMIN"
-        systemLanguage:
-          type: "string"
-          nullable: true
-          enum:
-            - "RUSSIAN"
-            - "UZBEK"
-            - "CHINESE"
-            - "HINDI"
-            - "TAJIK"
-            - "ENGLISH"
-        avatarId:
-          type: "string"
-          nullable: true
-        status:
-          type: "string"
-          enum:
-            - "ACTIVE"
-            - "SUSPENDED"
-            - "DEACTIVATED"
-            - "PENDING_VERIFICATION"
-      required:
-        - "status"
     MessageResponse:
       type: "object"
       properties:
@@ -4996,269 +4391,6 @@ components:
         - "success"
         - "message"
         - "timestamp"
-    StaffProfile:
-      type: "object"
-      properties:
-        userId:
-          type: "string"
-        name:
-          type: "string"
-        surname:
-          type: "string"
-        patronymic:
-          type: "string"
-          nullable: true
-      required:
-        - "userId"
-        - "name"
-        - "surname"
-    StaffProfileResponse:
-      type: "object"
-      properties:
-        success:
-          type: "boolean"
-        profile:
-          $ref: "#/components/schemas/StaffProfile"
-        message:
-          type: "string"
-          nullable: true
-        timestamp:
-          type: "integer"
-          format: "int64"
-      required:
-        - "success"
-        - "profile"
-        - "timestamp"
-    CreateStaffProfileRequest:
-      type: "object"
-      properties:
-        name:
-          type: "string"
-        surname:
-          type: "string"
-        patronymic:
-          type: "string"
-          nullable: true
-      required:
-        - "name"
-        - "surname"
-    UpdateStaffProfileRequest:
-      type: "object"
-      properties:
-        name:
-          type: "string"
-          nullable: true
-        surname:
-          type: "string"
-          nullable: true
-        patronymic:
-          type: "string"
-          nullable: true
-    UserProfile:
-      type: "object"
-      properties:
-        userId:
-          type: "string"
-        surname:
-          type: "string"
-        name:
-          type: "string"
-        patronymic:
-          type: "string"
-          nullable: true
-        gender:
-          type: "string"
-          enum:
-            - "MALE"
-            - "FEMALE"
-        dob:
-          type: "string"
-        dor:
-          type: "string"
-        citizenship:
-          type: "string"
-          nullable: true
-        nationality:
-          type: "string"
-          nullable: true
-        countryOfResidence:
-          type: "string"
-          nullable: true
-        cityOfResidence:
-          type: "string"
-          nullable: true
-        countryDuringEducation:
-          type: "string"
-          nullable: true
-        periodSpent:
-          type: "string"
-          nullable: true
-          enum:
-            - "MONTH_MINUS"
-            - "MONTH_SIX_MONTHS_MINUS"
-            - "SIX_MONTHS"
-            - "YEAR_MINUS"
-            - "YEAR_YEAR_PLUS"
-            - "YEAR_PLUS"
-            - "FIVE_YEAR_PLUS"
-            - "FIVE_YEARS_PLUS"
-            - "NEVER"
-        kindOfActivity:
-          type: "string"
-          nullable: true
-        education:
-          type: "string"
-          nullable: true
-        purposeOfRegister:
-          type: "string"
-          nullable: true
-      required:
-        - "userId"
-        - "surname"
-        - "name"
-        - "gender"
-        - "dob"
-        - "dor"
-    UserProfileResponse:
-      type: "object"
-      properties:
-        success:
-          type: "boolean"
-        profile:
-          $ref: "#/components/schemas/UserProfile"
-        message:
-          type: "string"
-          nullable: true
-        timestamp:
-          type: "integer"
-          format: "int64"
-      required:
-        - "success"
-        - "profile"
-        - "timestamp"
-    CreateUserProfileRequest:
-      type: "object"
-      properties:
-        surname:
-          type: "string"
-        name:
-          type: "string"
-        patronymic:
-          type: "string"
-          nullable: true
-        gender:
-          type: "string"
-          enum:
-            - "MALE"
-            - "FEMALE"
-        dob:
-          type: "string"
-        dor:
-          type: "string"
-        citizenship:
-          type: "string"
-          nullable: true
-        nationality:
-          type: "string"
-          nullable: true
-        countryOfResidence:
-          type: "string"
-          nullable: true
-        cityOfResidence:
-          type: "string"
-          nullable: true
-        countryDuringEducation:
-          type: "string"
-          nullable: true
-        periodSpent:
-          type: "string"
-          nullable: true
-          enum:
-            - "MONTH_MINUS"
-            - "MONTH_SIX_MONTHS_MINUS"
-            - "SIX_MONTHS"
-            - "YEAR_MINUS"
-            - "YEAR_YEAR_PLUS"
-            - "YEAR_PLUS"
-            - "FIVE_YEAR_PLUS"
-            - "FIVE_YEARS_PLUS"
-            - "NEVER"
-        kindOfActivity:
-          type: "string"
-          nullable: true
-        education:
-          type: "string"
-          nullable: true
-        purposeOfRegister:
-          type: "string"
-          nullable: true
-      required:
-        - "surname"
-        - "name"
-        - "gender"
-        - "dob"
-        - "dor"
-    UpdateUserProfileRequest:
-      type: "object"
-      properties:
-        surname:
-          type: "string"
-          nullable: true
-        name:
-          type: "string"
-          nullable: true
-        patronymic:
-          type: "string"
-          nullable: true
-        gender:
-          type: "string"
-          nullable: true
-          enum:
-            - "MALE"
-            - "FEMALE"
-        dob:
-          type: "string"
-          nullable: true
-        dor:
-          type: "string"
-          nullable: true
-        citizenship:
-          type: "string"
-          nullable: true
-        nationality:
-          type: "string"
-          nullable: true
-        countryOfResidence:
-          type: "string"
-          nullable: true
-        cityOfResidence:
-          type: "string"
-          nullable: true
-        countryDuringEducation:
-          type: "string"
-          nullable: true
-        periodSpent:
-          type: "string"
-          nullable: true
-          enum:
-            - "MONTH_MINUS"
-            - "MONTH_SIX_MONTHS_MINUS"
-            - "SIX_MONTHS"
-            - "YEAR_MINUS"
-            - "YEAR_YEAR_PLUS"
-            - "YEAR_PLUS"
-            - "FIVE_YEAR_PLUS"
-            - "FIVE_YEARS_PLUS"
-            - "NEVER"
-        kindOfActivity:
-          type: "string"
-          nullable: true
-        education:
-          type: "string"
-          nullable: true
-        purposeOfRegister:
-          type: "string"
-          nullable: true
     StaffRegisterRequest:
       type: "object"
       properties:
@@ -5490,30 +4622,6 @@ components:
         isPublished:
           type: "boolean"
           nullable: true
-    MediaFileMeta:
-      type: "object"
-      properties:
-        mediaId:
-          type: "string"
-        fileName:
-          type: "string"
-        mimeType:
-          type: "string"
-        fileSize:
-          type: "integer"
-          format: "int64"
-        uploadedBy:
-          type: "string"
-          nullable: true
-        uploadTime:
-          type: "integer"
-          format: "int64"
-      required:
-        - "mediaId"
-        - "fileName"
-        - "mimeType"
-        - "fileSize"
-        - "uploadTime"
     Report:
       type: "object"
       properties:
@@ -5662,6 +4770,7 @@ components:
             - "IMAGE"
             - "TEXT"
             - "VIDEO"
+            - "AVATAR"
         contentId:
           type: "string"
           nullable: true
@@ -5847,6 +4956,7 @@ components:
             - "IMAGE"
             - "TEXT"
             - "VIDEO"
+            - "AVATAR"
         contentId:
           type: "string"
           nullable: true
@@ -5876,6 +4986,7 @@ components:
             - "IMAGE"
             - "TEXT"
             - "VIDEO"
+            - "AVATAR"
         contentId:
           type: "string"
           nullable: true
@@ -5978,9 +5089,312 @@ components:
           type: "integer"
           format: "int32"
           nullable: true
-    Pair:
+    MediaFileMeta:
       type: "object"
-      properties: { }
+      properties:
+        mediaId:
+          type: "string"
+        fileName:
+          type: "string"
+        mimeType:
+          type: "string"
+        fileSize:
+          type: "integer"
+          format: "int64"
+        fileType:
+          type: "string"
+          enum:
+            - "IMAGE"
+            - "AUDIO"
+            - "VIDEO"
+            - "AVATAR"
+        uploadedBy:
+          type: "string"
+          nullable: true
+        uploadedAt:
+          type: "string"
+      required:
+        - "mediaId"
+        - "fileName"
+        - "mimeType"
+        - "fileSize"
+        - "fileType"
+        - "uploadedAt"
+    StaffProfile:
+      type: "object"
+      properties:
+        userId:
+          type: "string"
+        name:
+          type: "string"
+        surname:
+          type: "string"
+        patronymic:
+          type: "string"
+          nullable: true
+      required:
+        - "userId"
+        - "name"
+        - "surname"
+    StaffProfileResponse:
+      type: "object"
+      properties:
+        success:
+          type: "boolean"
+        profile:
+          $ref: "#/components/schemas/StaffProfile"
+        message:
+          type: "string"
+          nullable: true
+        timestamp:
+          type: "integer"
+          format: "int64"
+      required:
+        - "success"
+        - "profile"
+        - "timestamp"
+    CreateStaffProfileRequest:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+        surname:
+          type: "string"
+        patronymic:
+          type: "string"
+          nullable: true
+      required:
+        - "name"
+        - "surname"
+    UpdateStaffProfileRequest:
+      type: "object"
+      properties:
+        name:
+          type: "string"
+          nullable: true
+        surname:
+          type: "string"
+          nullable: true
+        patronymic:
+          type: "string"
+          nullable: true
+        passwordHash:
+          type: "string"
+          nullable: true
+        systemLanguage:
+          type: "string"
+          nullable: true
+        phone:
+          type: "string"
+          nullable: true
+        avatarId:
+          type: "string"
+          nullable: true
+    UserProfile:
+      type: "object"
+      properties:
+        userId:
+          type: "string"
+        surname:
+          type: "string"
+        name:
+          type: "string"
+        patronymic:
+          type: "string"
+          nullable: true
+        gender:
+          type: "string"
+          enum:
+            - "MALE"
+            - "FEMALE"
+        dob:
+          type: "string"
+        dor:
+          type: "string"
+        citizenship:
+          type: "string"
+          nullable: true
+        nationality:
+          type: "string"
+          nullable: true
+        countryOfResidence:
+          type: "string"
+          nullable: true
+        cityOfResidence:
+          type: "string"
+          nullable: true
+        countryDuringEducation:
+          type: "string"
+          nullable: true
+        periodSpent:
+          type: "string"
+          nullable: true
+          enum:
+            - "MONTH_MINUS"
+            - "MONTH_SIX_MONTHS_MINUS"
+            - "SIX_MONTHS"
+            - "YEAR_MINUS"
+            - "YEAR_YEAR_PLUS"
+            - "YEAR_PLUS"
+            - "FIVE_YEAR_PLUS"
+            - "FIVE_YEARS_PLUS"
+            - "NEVER"
+        kindOfActivity:
+          type: "string"
+          nullable: true
+        education:
+          type: "string"
+          nullable: true
+        purposeOfRegister:
+          type: "string"
+          nullable: true
+      required:
+        - "userId"
+        - "surname"
+        - "name"
+        - "gender"
+        - "dob"
+        - "dor"
+    UserProfileResponse:
+      type: "object"
+      properties:
+        success:
+          type: "boolean"
+        profile:
+          $ref: "#/components/schemas/UserProfile"
+        message:
+          type: "string"
+          nullable: true
+        timestamp:
+          type: "integer"
+          format: "int64"
+      required:
+        - "success"
+        - "profile"
+        - "timestamp"
+    CreateUserProfileRequest:
+      type: "object"
+      properties:
+        surname:
+          type: "string"
+        name:
+          type: "string"
+        patronymic:
+          type: "string"
+          nullable: true
+        gender:
+          type: "string"
+          enum:
+            - "MALE"
+            - "FEMALE"
+        dob:
+          type: "string"
+        dor:
+          type: "string"
+        citizenship:
+          type: "string"
+          nullable: true
+        nationality:
+          type: "string"
+          nullable: true
+        countryOfResidence:
+          type: "string"
+          nullable: true
+        cityOfResidence:
+          type: "string"
+          nullable: true
+        countryDuringEducation:
+          type: "string"
+          nullable: true
+        periodSpent:
+          type: "string"
+          nullable: true
+          enum:
+            - "MONTH_MINUS"
+            - "MONTH_SIX_MONTHS_MINUS"
+            - "SIX_MONTHS"
+            - "YEAR_MINUS"
+            - "YEAR_YEAR_PLUS"
+            - "YEAR_PLUS"
+            - "FIVE_YEAR_PLUS"
+            - "FIVE_YEARS_PLUS"
+            - "NEVER"
+        kindOfActivity:
+          type: "string"
+          nullable: true
+        education:
+          type: "string"
+          nullable: true
+        purposeOfRegister:
+          type: "string"
+          nullable: true
+      required:
+        - "surname"
+        - "name"
+        - "gender"
+        - "dob"
+        - "dor"
+    UpdateUserProfileRequest:
+      type: "object"
+      properties:
+        surname:
+          type: "string"
+          nullable: true
+        name:
+          type: "string"
+          nullable: true
+        patronymic:
+          type: "string"
+          nullable: true
+        gender:
+          type: "string"
+          nullable: true
+          enum:
+            - "MALE"
+            - "FEMALE"
+        dob:
+          type: "string"
+          nullable: true
+        dor:
+          type: "string"
+          nullable: true
+        citizenship:
+          type: "string"
+          nullable: true
+        nationality:
+          type: "string"
+          nullable: true
+        countryOfResidence:
+          type: "string"
+          nullable: true
+        cityOfResidence:
+          type: "string"
+          nullable: true
+        countryDuringEducation:
+          type: "string"
+          nullable: true
+        periodSpent:
+          type: "string"
+          nullable: true
+          enum:
+            - "MONTH_MINUS"
+            - "MONTH_SIX_MONTHS_MINUS"
+            - "SIX_MONTHS"
+            - "YEAR_MINUS"
+            - "YEAR_YEAR_PLUS"
+            - "YEAR_PLUS"
+            - "FIVE_YEAR_PLUS"
+            - "FIVE_YEARS_PLUS"
+            - "NEVER"
+        kindOfActivity:
+          type: "string"
+          nullable: true
+        education:
+          type: "string"
+          nullable: true
+        purposeOfRegister:
+          type: "string"
+          nullable: true
     UserLanguageSkillRequest:
       type: "object"
       properties:
@@ -6093,45 +5507,6 @@ components:
         - "courseId"
         - "enrolledAt"
         - "progress"
-    MediaFile:
-      type: "object"
-      properties:
-        id:
-          type: "string"
-        fileName:
-          type: "string"
-        fileType:
-          type: "string"
-          enum:
-            - "IMAGE"
-            - "AUDIO"
-            - "VIDEO"
-        mimeType:
-          type: "string"
-        fileSize:
-          type: "integer"
-          format: "int64"
-        uploadedBy:
-          type: "string"
-          nullable: true
-        uploadedAt:
-          type: "string"
-        isActive:
-          type: "boolean"
-        fileBlob:
-          type: "array"
-          items:
-            type: "string"
-            format: "byte"
-      required:
-        - "id"
-        - "fileName"
-        - "fileType"
-        - "mimeType"
-        - "fileSize"
-        - "uploadedAt"
-        - "isActive"
-        - "fileBlob"
     UserTaskQueueItem:
       type: "object"
       properties:
@@ -6253,3 +5628,39 @@ components:
           type: "integer"
           format: "int32"
           nullable: true
+    UpdateUserRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          nullable: true
+        role:
+          type: "string"
+          enum:
+            - "STUDENT"
+            - "EXPERT"
+            - "CONTENT_MODERATOR"
+            - "ADMIN"
+          nullable: true
+        systemLanguage:
+          type: "string"
+          enum:
+            - "RUSSIAN"
+            - "UZBEK"
+            - "CHINESE"
+            - "HINDI"
+            - "TAJIK"
+            - "ENGLISH"
+          nullable: true
+        avatarId:
+          type: string
+          nullable: true
+        status:
+          type: "string"
+          nullable: true
+          enum:
+            - "NOT_STARTED"
+            - "IN_PROGRESS"
+            - "COMPLETED"
+            - "PENDING_RETRY"
+      required: [ ]

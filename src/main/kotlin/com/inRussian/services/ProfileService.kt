@@ -8,8 +8,8 @@ import com.inRussian.models.users.UserRole
 import com.inRussian.repositories.StaffProfileRepository
 import com.inRussian.repositories.UserProfileRepository
 import com.inRussian.repositories.UserRepository
+import com.inRussian.requests.admin.UpdateUserRequest
 import com.inRussian.requests.users.*
-
 
 class ProfileService(
     private val userProfileRepository: UserProfileRepository,
@@ -17,16 +17,51 @@ class ProfileService(
     private val userRepository: UserRepository,
 ) {
 
+    private fun canWrite(currentUserRole: UserRole, currentUserId: String, targetUserId: String): Boolean {
+        return currentUserRole == UserRole.ADMIN || currentUserId == targetUserId
+    }
+
+    private fun canRead(currentUserRole: UserRole, currentUserId: String, targetUserId: String): Boolean {
+        return currentUserRole == UserRole.ADMIN ||
+                currentUserRole == UserRole.EXPERT ||
+                currentUserId == targetUserId
+    }
+    suspend fun updateUserBase(
+        currentUserId: String,
+        currentUserRole: UserRole,
+        request: UpdateUserRequest,
+        targetUserId: String? = null
+    ): Result<Boolean> {
+        val userId = targetUserId ?: currentUserId
+
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
+        }
+
+        val user = userRepository.findById(userId)
+            ?: return Result.failure(Exception("User not found"))
+
+        val updatedUser = user.copy(
+            phone = request.phone ?: user.phone,
+            avatarId = request.avatarId ?: user.avatarId,
+            systemLanguage = request.systemLanguage ?: user.systemLanguage,
+            status = request.status,
+            role = request.role ?: user.role,
+        )
+        userRepository.update(updatedUser)
+        return Result.success(true)
+    }
+
     suspend fun createUserProfile(
         currentUserId: String,
         currentUserRole: UserRole,
         request: CreateUserProfileRequest,
         targetUserId: String? = null
     ): Result<UserProfile> {
-        val userId = if (currentUserRole == UserRole.ADMIN && targetUserId != null) {
-            targetUserId
-        } else {
-            currentUserId
+        val userId = targetUserId ?: currentUserId
+
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val user = userRepository.findById(userId)
@@ -63,13 +98,15 @@ class ProfileService(
     }
 
     suspend fun updateUserProfile(
-        userId: String,
-        request: UpdateUserProfileRequest,
+        currentUserId: String,
         currentUserRole: UserRole,
-        currentUserId: String
+        request: UpdateUserProfileRequest,
+        targetUserId: String? = null
     ): Result<UserProfile> {
-        if (currentUserRole != UserRole.ADMIN && currentUserId != userId) {
-            return Result.failure(Exception("You can only edit your own profile"))
+        val userId = targetUserId ?: currentUserId
+
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val existingProfile = userProfileRepository.findByUserId(userId)
@@ -102,10 +139,10 @@ class ProfileService(
         request: CreateStaffProfileRequest,
         targetUserId: String? = null
     ): Result<StaffProfile> {
-        val userId = if (currentUserRole == UserRole.ADMIN && targetUserId != null) {
-            targetUserId
-        } else {
-            currentUserId
+        val userId = targetUserId ?: currentUserId
+
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val user = userRepository.findById(userId)
@@ -129,18 +166,16 @@ class ProfileService(
         return Result.success(staffProfileRepository.create(profile))
     }
 
-    suspend fun getAvatarId(userId: String): String? {
-        return userRepository.findById(userId)?.avatarId
-    }
-
     suspend fun updateStaffProfile(
-        userId: String,
-        request: UpdateStaffProfileRequest,
+        currentUserId: String,
         currentUserRole: UserRole,
-        currentUserId: String
+        request: UpdateStaffProfileRequest,
+        targetUserId: String? = null
     ): Result<StaffProfile> {
-        if (currentUserRole != UserRole.ADMIN && currentUserId != userId) {
-            return Result.failure(Exception("You can only edit your own profile"))
+        val userId = targetUserId ?: currentUserId
+
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val existingProfile = staffProfileRepository.findByUserId(userId)
@@ -166,16 +201,40 @@ class ProfileService(
         return Result.success(updatedProfile)
     }
 
-    suspend fun getUserProfile(userId: String): Result<UserProfile> {
+    suspend fun getUserProfile(
+        currentUserId: String,
+        currentUserRole: UserRole,
+        targetUserId: String? = null
+    ): Result<UserProfile> {
+        val userId = targetUserId ?: currentUserId
+
+        if (!canRead(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
+        }
+
         val profile = userProfileRepository.findByUserId(userId)
             ?: return Result.failure(Exception("User profile not found"))
         return Result.success(profile)
     }
 
-    suspend fun getStaffProfile(userId: String): Result<StaffProfile> {
+    suspend fun getStaffProfile(
+        currentUserId: String,
+        currentUserRole: UserRole,
+        targetUserId: String? = null
+    ): Result<StaffProfile> {
+        val userId = targetUserId ?: currentUserId
+        println(canRead(currentUserRole, currentUserId, userId))
+        if (!canRead(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
+        }
+
         val profile = staffProfileRepository.findByUserId(userId)
             ?: return Result.failure(Exception("Staff profile not found"))
         return Result.success(profile)
+    }
+
+    suspend fun getAvatarId(userId: String): String? {
+        return userRepository.findById(userId)?.avatarId
     }
 
     suspend fun addUserLanguageSkill(
@@ -184,14 +243,10 @@ class ProfileService(
         request: UserLanguageSkillRequest,
         targetUserId: String? = null
     ): Result<Boolean> {
-        val userId = if (currentUserRole == UserRole.ADMIN && targetUserId != null) {
-            targetUserId
-        } else {
-            currentUserId
-        }
+        val userId = targetUserId ?: currentUserId
 
-        if (currentUserRole != UserRole.ADMIN && currentUserId != userId) {
-            return Result.failure(Exception("You can only manage your own language skills"))
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val success = userProfileRepository.addSkill(userId, request)
@@ -204,9 +259,9 @@ class ProfileService(
         currentUserRole: UserRole,
         targetUserId: String? = null
     ): Result<List<UserLanguageSkill>> {
-        val userId = if (targetUserId != null) targetUserId else currentUserId
+        val userId = targetUserId ?: currentUserId
 
-        if ((currentUserRole != UserRole.ADMIN) && (currentUserRole != UserRole.EXPERT) && currentUserId != userId) {
+        if (!canRead(currentUserRole, currentUserId, userId)) {
             return Result.failure(Exception("Access denied"))
         }
 
@@ -221,14 +276,10 @@ class ProfileService(
         request: UserLanguageSkillRequest,
         targetUserId: String? = null
     ): Result<UserLanguageSkill> {
-        val userId = if (currentUserRole == UserRole.ADMIN && targetUserId != null) {
-            targetUserId
-        } else {
-            currentUserId
-        }
+        val userId = targetUserId ?: currentUserId
 
-        if (currentUserRole != UserRole.ADMIN && currentUserId != userId) {
-            return Result.failure(Exception("You can only manage your own language skills"))
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val updatedSkill = userProfileRepository.updateSkill(skillId, userId, request)
@@ -243,14 +294,10 @@ class ProfileService(
         skillId: String,
         targetUserId: String? = null
     ): Result<Boolean> {
-        val userId = if (currentUserRole == UserRole.ADMIN && targetUserId != null) {
-            targetUserId
-        } else {
-            currentUserId
-        }
+        val userId = targetUserId ?: currentUserId
 
-        if (currentUserRole != UserRole.ADMIN && currentUserId != userId) {
-            return Result.failure(Exception("You can only manage your own language skills"))
+        if (!canWrite(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
         }
 
         val success = userProfileRepository.deleteSkill(skillId, userId)

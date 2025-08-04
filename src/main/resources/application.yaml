@@ -6,6 +6,9 @@ ktor:
     port: 8080
     host: localhost
   development: true
+admin:
+  email: "admin@example.com"
+  password: "changeMeToAStrongPassword"
 jwt:
   domain: "http://localhost:8080/"
   audience: "jwt-audience"
@@ -17,3 +20,4 @@ postgres:
   maximumPoolSize: 10
   minimumIdle: 2
   connectionTimeout: 30000
+

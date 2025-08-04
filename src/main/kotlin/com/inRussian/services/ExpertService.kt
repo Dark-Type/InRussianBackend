@@ -31,28 +31,11 @@ interface ExpertService {
     suspend fun getOverallAverageTime(): Result<Long?>
     suspend fun getOverallAverageProgress(): Result<BigDecimal?>
 
-    suspend fun getAllCourses(): Result<List<Course>>
-    suspend fun getCourse(courseId: String): Result<Course?>
-    suspend fun getSectionsByCourse(courseId: String): Result<List<Section>>
-    suspend fun getSection(sectionId: String): Result<Section?>
-    suspend fun getThemesBySection(sectionId: String): Result<List<Theme>>
-    suspend fun getTheme(themeId: String): Result<Theme?>
-    suspend fun getTasksByTheme(themeId: String): Result<List<TaskWithDetails>>
-    suspend fun getTask(taskId: String): Result<TaskWithDetails?>
-    suspend fun getTaskContent(contentId: String): Result<TaskContentItem?>
-    suspend fun getTaskAnswer(taskId: String): Result<TaskAnswerItem?>
-    suspend fun getTaskAnswerOption(optionId: String): Result<TaskAnswerOptionItem?>
-    suspend fun getAllReports(): Result<List<Report>>
-    suspend fun getReport(reportId: String): Result<Report?>
-    suspend fun getCountStats(): Result<CountStats>
-    suspend fun getCourseTasksCount(courseId: String): Result<Long>
-    suspend fun getSectionTasksCount(sectionId: String): Result<Long>
-    suspend fun getThemeTasksCount(themeId: String): Result<Long>
+
 }
 
 class ExpertServiceImpl(
     private val adminRepository: AdminRepository,
-    private val contentRepository: ContentRepository
 ) : ExpertService {
 
     override suspend fun getAllStudents(
@@ -101,6 +84,7 @@ class ExpertServiceImpl(
     } catch (e: Exception) {
         Result.failure(e)
     }
+
     override suspend fun getStudentsCountByCourse(courseId: String): Result<Long> = try {
         val count = adminRepository.getStudentsCountByCourse(courseId)
         Result.success(count)
@@ -142,108 +126,5 @@ class ExpertServiceImpl(
     } catch (e: Exception) {
         Result.failure(e)
     }
-
-    override suspend fun getAllCourses(): Result<List<Course>> = try {
-        Result.success(contentRepository.getAllCourses())
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getCourse(courseId: String): Result<Course?> = try {
-        Result.success(contentRepository.getCourse(courseId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getSectionsByCourse(courseId: String): Result<List<Section>> = try {
-        Result.success(contentRepository.getSectionsByCourse(courseId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getSection(sectionId: String): Result<Section?> = try {
-        Result.success(contentRepository.getSection(sectionId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getThemesBySection(sectionId: String): Result<List<Theme>> = try {
-        Result.success(contentRepository.getThemesBySection(sectionId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getTheme(themeId: String): Result<Theme?> = try {
-        Result.success(contentRepository.getTheme(themeId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getTasksByTheme(themeId: String): Result<List<TaskWithDetails>> = try {
-        Result.success(contentRepository.getTasksByTheme(themeId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getTask(taskId: String): Result<TaskWithDetails?> = try {
-        Result.success(contentRepository.getTask(taskId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getTaskContent(contentId: String): Result<TaskContentItem?> = try {
-        Result.success(contentRepository.getTaskContent(contentId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getTaskAnswer(taskId: String): Result<TaskAnswerItem?> = try {
-        Result.success(contentRepository.getTaskAnswer(taskId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getTaskAnswerOption(optionId: String): Result<TaskAnswerOptionItem?> = try {
-        Result.success(contentRepository.getTaskAnswerOption(optionId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getAllReports(): Result<List<Report>> = try {
-        Result.success(contentRepository.getAllReports())
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getReport(reportId: String): Result<Report?> = try {
-        Result.success(contentRepository.getReport(reportId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getCountStats(): Result<CountStats> = try {
-        Result.success(contentRepository.getCountStats())
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getCourseTasksCount(courseId: String): Result<Long> = try {
-        Result.success(contentRepository.getCourseTasksCount(courseId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getSectionTasksCount(sectionId: String): Result<Long> = try {
-        Result.success(contentRepository.getSectionTasksCount(sectionId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
-    override suspend fun getThemeTasksCount(themeId: String): Result<Long> = try {
-        Result.success(contentRepository.getThemeTasksCount(themeId))
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
 
 }

@@ -84,60 +84,6 @@ fun Route.expertRoutes(expertService: ExpertService) {
                         )
                     }
                 }
-
-                get("/with-profiles") {
-                    val page = call.request.queryParameters["page"]?.toIntOrNull() ?: 1
-                    val size = call.request.queryParameters["size"]?.toIntOrNull() ?: 20
-
-                    val result = expertService.getStudentsWithProfiles(page, size)
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message
-                                    ?: "Не удалось получить студентов с профилями",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-
-                get("/course/{courseId}") {
-                    val courseId = call.parameters["courseId"]
-                    if (courseId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                success = false,
-                                error = "Не указан courseId",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                        return@get
-                    }
-
-                    val result = expertService.getStudentsByCourse(courseId)
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить студентов курса",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
             }
 
             route("/statistics") {
@@ -153,39 +99,6 @@ fun Route.expertRoutes(expertService: ExpertService) {
                                 success = false,
                                 error = result.exceptionOrNull()?.message
                                     ?: "Не удалось получить общее количество студентов",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-
-                get("/students/course/{courseId}") {
-                    val courseId = call.parameters["courseId"]
-                    if (courseId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                success = false,
-                                error = "Не указан courseId",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                        return@get
-                    }
-
-                    val result = expertService.getStudentsCountByCourse(courseId)
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, mapOf("studentsCount" to result.getOrNull()!!))
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message
-                                    ?: "Не удалось получить количество студентов курса",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -218,6 +131,37 @@ fun Route.expertRoutes(expertService: ExpertService) {
                             ErrorResponse(
                                 success = false,
                                 error = result.exceptionOrNull()?.message ?: "Не удалось получить среднее время курса",
+                                code = null,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                    }
+                }
+                get("/course/{courseId}/students-count") {
+                    val courseId = call.parameters["courseId"]
+                    if (courseId == null) {
+                        call.respond(
+                            HttpStatusCode.BadRequest,
+                            ErrorResponse(
+                                success = false,
+                                error = "Не указан courseId",
+                                code = null,
+                                timestamp = System.currentTimeMillis()
+                            )
+                        )
+                        return@get
+                    }
+
+                    val result = expertService.getStudentsCountByCourse(courseId)
+
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, mapOf("count" to result.getOrNull()!!))
+                    } else {
+                        call.respond(
+                            HttpStatusCode.InternalServerError,
+                            ErrorResponse(
+                                success = false,
+                                error = result.exceptionOrNull()?.message ?: "Не удалось получить количество студентов в курсе",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )
@@ -288,107 +232,6 @@ fun Route.expertRoutes(expertService: ExpertService) {
                                 success = false,
                                 error = result.exceptionOrNull()?.message
                                     ?: "Не удалось получить общий средний прогресс",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-            }
-
-            route("/content") {
-                get("/courses") {
-                    val result = expertService.getAllCourses()
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить курсы",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-
-                get("/courses/{courseId}") {
-                    val courseId = call.parameters["courseId"]
-                    if (courseId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                success = false,
-                                error = "Не указан courseId",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                        return@get
-                    }
-
-                    val result = expertService.getCourse(courseId)
-
-                    if (result.isSuccess) {
-                        val course = result.getOrNull()
-                        if (course != null) {
-                            call.respond(HttpStatusCode.OK, course)
-                        } else {
-                            call.respond(
-                                HttpStatusCode.NotFound,
-                                ErrorResponse(
-                                    success = false,
-                                    error = "Курс не найден",
-                                    code = null,
-                                    timestamp = System.currentTimeMillis()
-                                )
-                            )
-                        }
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить курс",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-
-                get("/reports") {
-                    val result = expertService.getAllReports()
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить отчёты",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-
-                get("/stats") {
-                    val result = expertService.getCountStats()
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.InternalServerError,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "Не удалось получить статистику",
                                 code = null,
                                 timestamp = System.currentTimeMillis()
                             )

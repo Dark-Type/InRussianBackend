@@ -7,11 +7,6 @@ import com.inRussian.repositories.*
 
 interface StudentService {
     suspend fun getCoursesByUserLanguage(userId: String): Result<List<Course>>
-    suspend fun getSectionsByCourse(courseId: String): Result<List<Section>>
-    suspend fun getThemesByCourse(courseId: String): Result<List<Theme>>
-    suspend fun getTasksByTheme(themeId: String): Result<List<TaskWithDetails>>
-    suspend fun getTaskVariants(taskId: String): Result<List<TaskAnswerOptionItem>>
-    suspend fun getTaskContent(taskId: String): Result<List<TaskContentItem>>
     suspend fun getTaskQuery(userId: String, taskId: String): Result<TaskWithDetails?>
     suspend fun getUserBadges(userId: String): Result<List<Badge>>
 
@@ -45,31 +40,12 @@ class StudentServiceImpl(
     override suspend fun getCoursesByUserLanguage(userId: String) =
         runCatching { repository.getCoursesByUserLanguage(userId) }
 
-    override suspend fun getSectionsByCourse(courseId: String) =
-        runCatching { repository.getSectionsByCourse(courseId) }
-
-    override suspend fun getThemesByCourse(courseId: String) =
-        runCatching {
-            val sections = repository.getSectionsByCourse(courseId)
-            sections.flatMap { repository.getThemesBySection(it.id) }
-        }
-
-    override suspend fun getTasksByTheme(themeId: String) =
-        runCatching { repository.getTasksByTheme(themeId) }
-
-    override suspend fun getTaskVariants(taskId: String) =
-        runCatching { repository.getTaskAnswerOptions(taskId) }
-
-    override suspend fun getTaskContent(taskId: String) =
-        runCatching { repository.getTaskContent(taskId) }
-
     override suspend fun getTaskQuery(userId: String, taskId: String) =
         runCatching { repository.getTask(taskId) }
 
     override suspend fun getUserBadges(userId: String) =
         runCatching { repository.getUserBadges(userId) }
 
-    // Новые методы
     override suspend fun createUserBadge(userId: String, badgeId: String, courseId: String?, themeId: String?) =
         runCatching { repository.createUserBadge(userId, badgeId, courseId, themeId) }
 
