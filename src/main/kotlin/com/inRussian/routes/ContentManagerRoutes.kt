@@ -432,15 +432,6 @@ fun Route.contentManagerRoutes(contentService: ContentService) {
                         call.respond(HttpStatusCode.NotFound, "Report not found")
                     }
                 }
-
-                get {
-                    val result = contentService.getAllReports()
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(HttpStatusCode.InternalServerError, "Failed to get reports")
-                    }
-                }
             }
 
         }

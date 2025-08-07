@@ -792,6 +792,27 @@ paths:
                     error: "null"
                     code: "null"
                     timestamp: "null"
+    get:
+      tags: [ content ]
+      description: ""
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                type: "array"
+                items:
+                  $ref: "#/components/schemas/Report"
+        "500":
+          description: "Internal Server Error"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Failed to get reports"
   /content/reports/{reportId}:
     get:
       tags: [ content ]
@@ -827,6 +848,41 @@ paths:
               examples:
                 Example#1:
                   value: "Report not found"
+    delete:
+      tags: [ content_manager ]
+      description: ""
+      parameters:
+        - name: "reportId"
+          in: "path"
+          required: true
+          schema:
+            type: "string"
+      responses:
+        "400":
+          description: "Bad Request"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Missing report ID"
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Map_String"
+        "404":
+          description: "Not Found"
+          content:
+            '*/*':
+              schema:
+                type: "string"
+              examples:
+                Example#1:
+                  value: "Report not found"
+
   /content/sections:
     post:
       tags: [ content_manager ]
