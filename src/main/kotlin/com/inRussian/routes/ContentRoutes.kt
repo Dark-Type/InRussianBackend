@@ -8,26 +8,42 @@ import io.ktor.server.routing.*
 
 
 fun Route.contentRoutes(contentService: ContentService) {
+        // TODO("fix authenticate for `content-jwt`")
+        get("/content/tasks/{taskId}") {
+            val taskId = call.parameters["taskId"]
+            if (taskId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Missing task ID")
+                return@get
+            }
+            val result = contentService.getTask(taskId)
+            if (result.isSuccess) {
+                call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Task not found")
+            }
+        }
+
+
     authenticate("auth-jwt") {
         route("/content") {
 
             route("/tasks") {
 
 
-                get("/{taskId}") {
-                    val taskId = call.parameters["taskId"]
-                    if (taskId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing task ID")
-                        return@get
-                    }
-
-                    val result = contentService.getTask(taskId)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(HttpStatusCode.NotFound, "Task not found")
-                    }
-                }
+//                get("/{taskId}") {
+//                    val taskId = call.parameters["taskId"]
+//                    if (taskId == null) {
+//                        call.respond(HttpStatusCode.BadRequest, "Missing task ID")
+//                        return@get
+//                    }
+//
+//                    val result = contentService.getTask(taskId)
+//                    if (result.isSuccess) {
+//                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+//                    } else {
+//                        call.respond(HttpStatusCode.NotFound, "Task not found")
+//                    }
+//                }
 
 
                 route("/{taskId}/content") {

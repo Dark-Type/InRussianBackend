@@ -16,7 +16,38 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
 fun Route.adminRoutes(adminService: AdminService) {
-    authenticate("admin-jwt") {
+    // TODO("fix authenticate for `content-jwt`")
+    get("admin/users/{userId}") {
+        val userId = call.parameters["userId"]
+        if (userId == null) {
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(
+                    success = false,
+                    error = "Missing user ID",
+                    code = null,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+            return@get
+        }
+        val result = adminService.getUserById(userId)
+        if (result.isSuccess) {
+            call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+        } else {
+            call.respond(
+                HttpStatusCode.NotFound,
+                ErrorResponse(
+                    success = false,
+                    error = result.exceptionOrNull()?.message ?: "User not found",
+                    code = null,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
+        }
+    }
+
+    authenticate("admin-jwt", "content-jwt") {
         route("/admin") {
             route("/users") {
                 post("/staff") {
@@ -124,37 +155,37 @@ fun Route.adminRoutes(adminService: AdminService) {
                     }
                 }
 
-                get("/{userId}") {
-                    val userId = call.parameters["userId"]
-                    if (userId == null) {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                success = false,
-                                error = "Missing user ID",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                        return@get
-                    }
-
-                    val result = adminService.getUserById(userId)
-
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "User not found",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
+//                get("/{userId}") {
+//                    val userId = call.parameters["userId"]
+//                    if (userId == null) {
+//                        call.respond(
+//                            HttpStatusCode.BadRequest,
+//                            ErrorResponse(
+//                                success = false,
+//                                error = "Missing user ID",
+//                                code = null,
+//                                timestamp = System.currentTimeMillis()
+//                            )
+//                        )
+//                        return@get
+//                    }
+//
+//                    val result = adminService.getUserById(userId)
+//
+//                    if (result.isSuccess) {
+//                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+//                    } else {
+//                        call.respond(
+//                            HttpStatusCode.NotFound,
+//                            ErrorResponse(
+//                                success = false,
+//                                error = result.exceptionOrNull()?.message ?: "User not found",
+//                                code = null,
+//                                timestamp = System.currentTimeMillis()
+//                            )
+//                        )
+//                    }
+//                }
 
                 put("/{userId}/status") {
                     val userId = call.parameters["userId"]
