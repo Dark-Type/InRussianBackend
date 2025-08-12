@@ -27,9 +27,9 @@ interface ExpertService {
     suspend fun getStudentsCountByCourse(courseId: String): Result<Long>
     suspend fun getOverallStudentsCount(): Result<Long>
     suspend fun getCourseAverageTime(courseId: String): Result<Long?>
-    suspend fun getCourseAverageProgress(courseId: String): Result<BigDecimal?>
+    suspend fun getCourseAverageProgress(courseId: String): Result<Double?>
     suspend fun getOverallAverageTime(): Result<Long?>
-    suspend fun getOverallAverageProgress(): Result<BigDecimal?>
+    suspend fun getOverallAverageProgress(): Result<Double?>
 
 
 }
@@ -106,12 +106,20 @@ class ExpertServiceImpl(
         Result.failure(e)
     }
 
-    override suspend fun getCourseAverageProgress(courseId: String): Result<BigDecimal?> = try {
+    override suspend fun getCourseAverageProgress(courseId: String): Result<Double?> = try {
         val progress = adminRepository.getCourseAverageProgress(courseId)
         Result.success(progress)
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    override suspend fun getOverallAverageProgress(): Result<Double?> = try {
+        val progress = adminRepository.getOverallAverageProgress()
+        Result.success(progress)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
 
     override suspend fun getOverallAverageTime(): Result<Long?> = try {
         val time = adminRepository.getOverallAverageTime()
@@ -119,12 +127,4 @@ class ExpertServiceImpl(
     } catch (e: Exception) {
         Result.failure(e)
     }
-
-    override suspend fun getOverallAverageProgress(): Result<BigDecimal?> = try {
-        val progress = adminRepository.getOverallAverageProgress()
-        Result.success(progress)
-    } catch (e: Exception) {
-        Result.failure(e)
-    }
-
 }

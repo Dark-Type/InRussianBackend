@@ -34,9 +34,9 @@ interface AdminRepository {
     suspend fun getStudentsCountByCourse(courseId: String): Long
     suspend fun getOverallStudentsCount(): Long
     suspend fun getCourseAverageTime(courseId: String): Long?
-    suspend fun getCourseAverageProgress(courseId: String): BigDecimal?
+    suspend fun getCourseAverageProgress(courseId: String): Double?
     suspend fun getOverallAverageTime(): Long?
-    suspend fun getOverallAverageProgress(): BigDecimal?
+    suspend fun getOverallAverageProgress(): Double?
 
     suspend fun createUserProfile(userId: String, request: CreateUserProfileRequest): UserProfile?
     suspend fun getUserProfile(userId: String): UserProfile?
@@ -169,16 +169,15 @@ class ExposedAdminRepository(
             ?.toLong()
     }
 
-    override suspend fun getCourseAverageProgress(courseId: String): BigDecimal? = transaction {
+    override suspend fun getCourseAverageProgress(courseId: String): Double? = transaction {
         val progressList = UserCourseStatistics.selectAll()
             .where { UserCourseStatistics.courseId eq UUID.fromString(courseId) }
-            .map { it[UserCourseStatistics.progressPercentage] }
+            .map { it[UserCourseStatistics.progressPercentage].toDouble() }
 
         if (progressList.isEmpty()) {
             null
         } else {
-            progressList.fold(BigDecimal.ZERO) { acc, progress -> acc + progress }
-                .divide(BigDecimal(progressList.size), 2, java.math.RoundingMode.HALF_UP)
+            progressList.average()
         }
     }
 
@@ -190,23 +189,21 @@ class ExposedAdminRepository(
             ?.toLong()
     }
 
-    override suspend fun getOverallAverageProgress(): BigDecimal? = transaction {
+    override suspend fun getOverallAverageProgress(): Double? = transaction {
         val userStats = UserStatistics.selectAll().map { row ->
             val totalTasks = row[UserStatistics.totalTasksAttempted]
             val completedTasks = row[UserStatistics.totalTasksCompleted]
             if (totalTasks > 0) {
-                BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 4, java.math.RoundingMode.HALF_UP)
-                    .multiply(BigDecimal(100))
+                (completedTasks.toDouble() / totalTasks.toDouble()) * 100.0
             } else {
-                BigDecimal.ZERO
+                0.0
             }
         }
 
         if (userStats.isEmpty()) {
             null
         } else {
-            userStats.fold(BigDecimal.ZERO) { acc, progress -> acc + progress }
-                .divide(BigDecimal(userStats.size), 2, java.math.RoundingMode.HALF_UP)
+            userStats.average()
         }
     }
 

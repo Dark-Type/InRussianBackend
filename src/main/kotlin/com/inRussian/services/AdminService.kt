@@ -1,10 +1,13 @@
 package com.inRussian.services
 
-import com.inRussian.models.users.*
+import com.inRussian.models.users.User
+import com.inRussian.models.users.UserRole
+import com.inRussian.models.users.UserStatus
 import com.inRussian.repositories.AdminRepository
 import com.inRussian.repositories.UserRepository
 import com.inRussian.requests.admin.UpdateUserRequest
-import com.inRussian.requests.users.*
+import com.inRussian.requests.users.StaffRegisterRequest
+import com.inRussian.responses.statistics.OverallStatisticsResponse
 import java.time.LocalDate
 
 class AdminService(
@@ -102,16 +105,15 @@ class AdminService(
         }
     }
 
-    suspend fun getOverallStatistics(): Result<Map<String, Any?>> {
+    suspend fun getOverallStatistics(): Result<OverallStatisticsResponse> {
         return try {
             val averageTime = adminRepository.getOverallAverageTime()
             val averageProgress = adminRepository.getOverallAverageProgress()
             val studentsCount = adminRepository.getOverallStudentsCount()
-
-            val stats = mapOf(
-                "totalStudents" to studentsCount,
-                "averageTimeSpentSeconds" to averageTime,
-                "averageProgressPercentage" to averageProgress
+            val stats = OverallStatisticsResponse(
+                totalStudents = studentsCount,
+                averageTimeSpentSeconds = averageTime,
+                averageProgressPercentage = averageProgress
             )
             Result.success(stats)
         } catch (e: Exception) {
