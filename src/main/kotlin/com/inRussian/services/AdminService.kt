@@ -7,6 +7,8 @@ import com.inRussian.repositories.AdminRepository
 import com.inRussian.repositories.UserRepository
 import com.inRussian.requests.admin.UpdateUserRequest
 import com.inRussian.requests.users.StaffRegisterRequest
+import com.inRussian.responses.auth.LoginResponse
+import com.inRussian.responses.statistics.OverallCourseStatisticsResponse
 import com.inRussian.responses.statistics.OverallStatisticsResponse
 import java.time.LocalDate
 
@@ -62,7 +64,7 @@ class AdminService(
         }
     }
 
-    suspend fun registerStaff(request: StaffRegisterRequest): Result<com.inRussian.responses.auth.LoginResponse> {
+    suspend fun registerStaff(request: StaffRegisterRequest): Result<LoginResponse> {
         return authService.registerStaff(request)
     }
 
@@ -88,16 +90,16 @@ class AdminService(
         }
     }
 
-    suspend fun getCourseStatistics(courseId: String): Result<Map<String, Any?>> {
+    suspend fun getCourseStatistics(courseId: String): Result<OverallCourseStatisticsResponse> {
         return try {
             val averageTime = adminRepository.getCourseAverageTime(courseId)
             val averageProgress = adminRepository.getCourseAverageProgress(courseId)
             val studentsCount = adminRepository.getStudentsCountByCourse(courseId)
 
-            val stats = mapOf(
-                "studentsCount" to studentsCount,
-                "averageTimeSpentSeconds" to averageTime,
-                "averageProgressPercentage" to averageProgress
+            val stats = OverallCourseStatisticsResponse(
+                studentsCount = studentsCount,
+                averageTimeSpentSeconds = averageTime,
+                averageProgressPercentage = averageProgress,
             )
             Result.success(stats)
         } catch (e: Exception) {
