@@ -41,36 +41,7 @@ class AuthService(
             status = UserStatus.ACTIVE
         )
 
-        val createdUser = userRepository.create(user)
-        val accessToken = JWTConfig.generateAccessToken(
-            userId = user.id,
-            email = user.email,
-            role = user.role,
-            secret = jwtSecret,
-            audience = jwtAudience,
-            issuer = jwtDomain
-        )
-        val refreshToken = JWTConfig.generateRefreshToken(
-            userId = user.id,
-            secret = jwtSecret,
-            audience = jwtAudience,
-            issuer = jwtDomain
-        )
-
-        return Result.success(
-            LoginResponse(
-                accessToken = accessToken,
-                refreshToken = refreshToken,
-                user = UserInfo(
-                    id = createdUser.id,
-                    email = createdUser.email,
-                    role = createdUser.role.name,
-                    phone = createdUser.phone,
-                    systemLanguage = createdUser.systemLanguage.name,
-                    status = createdUser.status.name
-                )
-            )
-        )
+        return register(user)
     }
 
     suspend fun registerStaff(request: StaffRegisterRequest): Result<LoginResponse> {
@@ -92,7 +63,15 @@ class AuthService(
             status = UserStatus.PENDING_VERIFICATION
         )
 
+        return register(user)
+    }
+
+    suspend fun register(user: User): Result<LoginResponse> {
         val createdUser = userRepository.create(user)
+        return createToken(createdUser)
+    }
+
+    suspend fun createToken(user: User): Result<LoginResponse> {
         val accessToken = JWTConfig.generateAccessToken(
             userId = user.id,
             email = user.email,
@@ -113,12 +92,12 @@ class AuthService(
                 accessToken = accessToken,
                 refreshToken = refreshToken,
                 user = UserInfo(
-                    id = createdUser.id,
-                    email = createdUser.email,
-                    role = createdUser.role.name,
-                    phone = createdUser.phone,
-                    systemLanguage = createdUser.systemLanguage.name,
-                    status = createdUser.status.name
+                    id = user.id,
+                    email = user.email,
+                    role = user.role.name,
+                    phone = user.phone,
+                    systemLanguage = user.systemLanguage.name,
+                    status = user.status.name
                 )
             )
         )
@@ -158,48 +137,24 @@ class AuthService(
     suspend fun login(request: LoginRequest): Result<LoginResponse> {
         val user = userRepository.findByEmail(request.email)
             ?: return Result.failure(Exception("Invalid email or password"))
-
+        println("valid 1")
         when (user.status) {
             UserStatus.SUSPENDED -> return Result.failure(Exception("Account is suspended"))
             UserStatus.DEACTIVATED -> return Result.failure(Exception("Account is deactivated"))
             UserStatus.PENDING_VERIFICATION -> {}
             UserStatus.ACTIVE -> {}
         }
+        println("valid 2")
 
         if (!BCrypt.checkpw(request.password, user.passwordHash)) {
             return Result.failure(Exception("Invalid email or password"))
         }
+        println("valid 3")
 
         userRepository.updateLastActivity(user.id)
+        println("valid 4")
 
-        val accessToken = JWTConfig.generateAccessToken(
-            userId = user.id,
-            email = user.email,
-            role = user.role,
-            secret = jwtSecret,
-            audience = jwtAudience,
-            issuer = jwtDomain
-        )
-        val refreshToken = JWTConfig.generateRefreshToken(
-            userId = user.id,
-            secret = jwtSecret,
-            audience = jwtAudience,
-            issuer = jwtDomain
-        )
-        return Result.success(
-            LoginResponse(
-                accessToken = accessToken,
-                refreshToken = refreshToken,
-                user = UserInfo(
-                    id = user.id,
-                    email = user.email,
-                    role = user.role.name,
-                    phone = user.phone,
-                    systemLanguage = user.systemLanguage.name,
-                    status = user.status.name
-                )
-            )
-        )
+        return createToken(user)
     }
 
     suspend fun createInitialAdmin(): Result<User> {

@@ -7,6 +7,7 @@ import com.inRussian.requests.auth.LoginRequest
 import com.inRussian.requests.users.StaffRegisterRequest
 import com.inRussian.requests.users.StudentRegisterRequest
 import com.inRussian.responses.auth.AdminCreatedResponse
+import com.inRussian.responses.auth.LoginResponse
 import com.inRussian.responses.auth.MessageResponse
 import com.inRussian.responses.auth.RefreshTokenRequest
 import com.inRussian.responses.auth.UserInfoData
@@ -19,28 +20,22 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import jakarta.validation.Validation
+import kotlin.collections.mapOf
+
+private val factory = Validation.buildDefaultValidatorFactory()
+private val validator = factory.validator
 
 fun Route.authRoutes(authService: AuthService) {
     route("/auth") {
         post("/student/register") {
             val request = call.receive<StudentRegisterRequest>()
-            val result = authService.registerStudent(request)
-
-            if (result.isSuccess) {
-                val response = result.getOrNull()
-                call.respond(HttpStatusCode.Created, response!!)
-            } else {
-                val error = result.exceptionOrNull()
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    ErrorResponse(
-                        success = false,
-                        error = error?.message ?: "Registration failed",
-                        code = null,
-                        timestamp = System.currentTimeMillis()
-                    )
-                )
+            if (!validate(request)) {
+                return@post
             }
+            val result = authService.registerStudent(request)
+            registerCheck(result)
+
         }
         post("/refresh") {
             val request = call.receive<RefreshTokenRequest>()
@@ -65,26 +60,15 @@ fun Route.authRoutes(authService: AuthService) {
         post("/staff/register") {
             val request = call.receive<StaffRegisterRequest>()
             val result = authService.registerStaff(request)
-
-            if (result.isSuccess) {
-                val response = result.getOrNull()
-                call.respond(HttpStatusCode.Created, response!!)
-            } else {
-                val error = result.exceptionOrNull()
-                call.respond(
-                    HttpStatusCode.BadRequest,
-                    ErrorResponse(
-                        success = false,
-                        error = error?.message ?: "Registration failed",
-                        code = null,
-                        timestamp = System.currentTimeMillis()
-                    )
-                )
+            if (!validate(request)) {
+                return@post
             }
+            registerCheck(result)
         }
 
         post("/login") {
             val request = call.receive<LoginRequest>()
+            println(request)
             val result = authService.login(request)
 
             if (result.isSuccess) {
@@ -164,5 +148,39 @@ fun Route.authRoutes(authService: AuthService) {
                 )
             }
         }
+    }
+}
+
+suspend fun RoutingContext.validate(request: Any): Boolean {
+    val violations = validator.validate(request)
+    if (violations.isNotEmpty()) {
+        val errors = violations.map { v ->
+            mapOf(
+                "field" to v.propertyPath.toString(),
+                "code" to (v.constraintDescriptor.annotation.annotationClass.simpleName ?: "Constraint"),
+                "message" to v.message
+            )
+        }
+        call.respond(HttpStatusCode.UnprocessableEntity, mapOf("errors" to errors))
+        return false
+    }
+    return true
+}
+
+suspend fun RoutingContext.registerCheck(result: Result<LoginResponse>) {
+    if (result.isSuccess) {
+        val response = result.getOrNull()
+        call.respond(HttpStatusCode.Created, response!!)
+    } else {
+        val error = result.exceptionOrNull()
+        call.respond(
+            HttpStatusCode.BadRequest,
+            ErrorResponse(
+                success = false,
+                error = error?.message ?: "Registration failed",
+                code = null,
+                timestamp = System.currentTimeMillis()
+            )
+        )
     }
 }

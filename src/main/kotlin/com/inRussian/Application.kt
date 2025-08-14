@@ -16,6 +16,5 @@ fun Application.module() {
     configureMonitoring()
     configureSecurity()
     configureRouting()
-
     println("Application module configured successfully!")
 }
