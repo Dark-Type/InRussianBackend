@@ -1,0 +1,13 @@
+package com.inRussian.tables
+
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.dao.id.IdTable
+import org.jetbrains.exposed.dao.id.UUIDTable
+import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.Table
+
+
+object TaskTypes : Table("task_types") {
+    val name = varchar("name", 50)
+    override val primaryKey = PrimaryKey(name, name = "pk_task_types")
+}

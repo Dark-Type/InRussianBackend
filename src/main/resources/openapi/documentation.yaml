@@ -4,7 +4,7 @@ info:
   version: "1.0.0"
   description: "API для проекта InRussian, которое используется для /домен вебсайта/ и приложения InRussian для Android и iOS."
 servers:
-  - url: "http://localhost:8080"
+  - url: "http://localhost:9080"
 tags:
   - name: admin
     description: Маршруты для администраторов \(управление пользователями, статистика, контент\)

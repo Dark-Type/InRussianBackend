@@ -27,10 +27,12 @@ repositories {
 }
 
 dependencies {
+    implementation("com.sun.mail:jakarta.mail:2.0.1")
     implementation("org.hibernate.validator:hibernate-validator:8.0.0.Final")
     implementation("org.glassfish:jakarta.el:4.0.2")
     implementation("io.ktor:ktor-server-core")
     implementation("io.ktor:ktor-server-content-negotiation")
+    implementation("io.ktor:ktor-client-content-negotiation")
     implementation("io.ktor:ktor-serialization-kotlinx-json")
     implementation("io.ktor:ktor-server-auth")
     implementation("io.ktor:ktor-client-core")
