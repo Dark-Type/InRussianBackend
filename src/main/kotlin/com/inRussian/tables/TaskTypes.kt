@@ -8,6 +8,5 @@ import org.jetbrains.exposed.sql.Table
 
 
 object TaskTypes : Table("task_types") {
-    val name = varchar("name", 50)
-    override val primaryKey = PrimaryKey(name, name = "pk_task_types")
+    val name = varchar("name", 50).uniqueIndex()
 }

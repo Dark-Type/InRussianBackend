@@ -9,7 +9,7 @@ import kotlin.time.Instant
 
 @Serializable
 data class CreateTaskModelRequest(
-    val taskType: List<TaskType>,
     val courseId: String,
     val taskBody: TaskBody,
+    val taskTypes: List<TaskType>
 )

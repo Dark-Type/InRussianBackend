@@ -1,11 +1,10 @@
 package com.inRussian
 
 import com.inRussian.config.*
-import com.inRussian.tables.TaskModel
+import com.inRussian.tables.TaskEntity
 
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.StdOutSqlLogger
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.addLogger
@@ -24,7 +23,7 @@ fun Application.module() {
     )
     transaction {
         addLogger(StdOutSqlLogger)
-        arrayOf<Table>(TaskModel)
+        arrayOf<Table>(TaskEntity)
         Unit
 
     }

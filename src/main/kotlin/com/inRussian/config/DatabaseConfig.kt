@@ -31,7 +31,7 @@ fun Application.configureDatabase() {
             Badges, Courses, CourseStatistics, MediaFiles, Sections, StaffProfiles, Users,
             TaskAnswerOptions, TaskAnswers, Tasks, Themes, TaskContent, UserBadges, UserCourseEnrollments,
             UserCourseStatistics, UserLanguageSkills, UserProfiles, UserStatistics, UserTaskProgress, UserTaskQueue,
-            TaskModel, TaskTypes, TaskToTypes,
+            TaskEntity, TaskTypes, TaskToTypes,
         )
     }
     try {

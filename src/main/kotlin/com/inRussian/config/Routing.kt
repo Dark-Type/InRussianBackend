@@ -14,6 +14,7 @@ import com.inRussian.repositories.StaffProfileRepository
 import com.inRussian.repositories.StudentRepository
 import com.inRussian.repositories.UserProfileRepository
 import com.inRussian.repositories.UserRepository
+import com.inRussian.responses.TaskRepository
 
 import com.inRussian.routes.authRoutes
 import com.inRussian.routes.contentRoutes
@@ -35,6 +36,7 @@ import io.ktor.server.routing.*
 import com.inRussian.routes.adminRoutes
 import com.inRussian.routes.contentManagerRoutes
 import com.inRussian.routes.mediaRoutes
+import com.inRussian.routes.taskRoutes
 import com.inRussian.services.MediaService
 
 
@@ -65,6 +67,7 @@ fun Application.configureRouting() {
         expertRoutes(expertService)
         studentRoutes(studentService)
         mediaRoutes(mediaService)
+        taskRoutes(TaskRepository())
     }
 
 }
