@@ -7,6 +7,7 @@ import com.inRussian.requests.content.CreateTaskModelRequest
 import com.inRussian.tables.TaskEntity
 import com.inRussian.tables.TaskToTypes
 import com.inRussian.tables.TaskTypes
+import com.inRussian.tables.Tasks
 import com.inRussian.tables.json
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
@@ -44,6 +45,7 @@ class TaskRepository {
             return Base64.decode(decoder.decodeString())
         }
     }
+
     fun createTask(request: CreateTaskModelRequest): TaskModel = transaction {
         addLogger(StdOutSqlLogger)
 
@@ -77,6 +79,15 @@ class TaskRepository {
     fun getTaskById(id: UUID): TaskModel = transaction {
         selectTaskDtoById(id)
             ?: throw IllegalStateException("Created task not found: $id")
+    }
+
+    fun getTaskByCourseId(id: UUID): List<TaskModel> = transaction {
+        val tasks = TaskEntity.selectAll().where { TaskEntity.courseId eq id }.map { it[TaskEntity.id].value }
+
+        tasks.map { taskId ->
+            selectTaskDtoById(taskId)
+                ?: throw IllegalStateException("Created task not found: $id")
+        }
     }
 
 

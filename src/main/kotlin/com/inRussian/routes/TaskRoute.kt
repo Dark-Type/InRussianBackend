@@ -23,7 +23,11 @@ fun Route.taskRoutes(taskRepository: TaskRepository) {
         post {
             val request = call.receive<CreateTaskModelRequest>()
             val response = taskRepository.createTask(request)
-            call.respond(HttpStatusCode.OK,response)
+            call.respond(HttpStatusCode.OK, response)
+        }
+        get("/course/{id}") {
+            val courseId = UUID.fromString(call.parameters["id"])
+            call.respond(HttpStatusCode.OK, taskRepository.getTaskByCourseId(courseId))
         }
     }
 }
