@@ -17,6 +17,7 @@ data class Section(
 data class Course(
     val id: String,
     val name: String,
+    val posterId: String?,
     val description: String?,
     val authorId: String,
     val authorUrl: String?,

@@ -139,7 +139,8 @@ class ExposedContentRepository : ContentRepository {
         language = this[Courses.language],
         isPublished = this[Courses.isPublished],
         createdAt = this[Courses.createdAt].toString(),
-        updatedAt = this[Courses.updatedAt].toString()
+        updatedAt = this[Courses.updatedAt].toString(),
+        posterId = TODO()
     )
 
     private fun ResultRow.toReport() = Report(

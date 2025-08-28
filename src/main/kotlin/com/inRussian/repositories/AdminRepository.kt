@@ -48,7 +48,6 @@ interface AdminRepository {
     suspend fun deleteStaffProfile(userId: String): Boolean
     suspend fun getStudentsByCourseId(courseId: String): List<User>
     suspend fun getAllStudentsWithProfiles(page: Int, size: Int): List<Pair<User, UserProfile?>>
-
 }
 
 class ExposedAdminRepository(

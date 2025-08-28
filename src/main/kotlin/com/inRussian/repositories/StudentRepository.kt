@@ -15,6 +15,7 @@ import java.util.*
 import java.math.BigDecimal
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import java.math.RoundingMode
 
 interface StudentRepository {
     // UserBadges CRUD
@@ -214,7 +215,8 @@ class ExposedStudentRepository : StudentRepository {
         language = this[Courses.language],
         isPublished = this[Courses.isPublished],
         createdAt = this[Courses.createdAt].toString(),
-        updatedAt = this[Courses.updatedAt].toString()
+        updatedAt = this[Courses.updatedAt].toString(),
+        posterId = this[Courses.posterId].toString()
     )
 
     private fun ResultRow.toReport() = Report(
@@ -458,7 +460,7 @@ class ExposedStudentRepository : StudentRepository {
             .count().toInt()
 
         val progressPercentage = if (totalTasks > 0) {
-            BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal(100))
+            BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 2, RoundingMode.HALF_UP).multiply(BigDecimal(100))
         } else {
             BigDecimal.ZERO
         }
@@ -476,7 +478,7 @@ class ExposedStudentRepository : StudentRepository {
         val completedTasks = sectionsProgress.sumOf { it.completedTasks }
 
         val progressPercentage = if (totalTasks > 0) {
-            BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 2, java.math.RoundingMode.HALF_UP).multiply(BigDecimal(100))
+            BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 2, RoundingMode.HALF_UP).multiply(BigDecimal(100))
         } else {
             BigDecimal.ZERO
         }

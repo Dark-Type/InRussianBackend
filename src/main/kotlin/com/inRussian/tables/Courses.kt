@@ -14,4 +14,5 @@ object Courses : UUIDTable("courses") {
     val isPublished = bool("is_published").default(false)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
     val updatedAt = timestamp("updated_at").defaultExpression(CurrentTimestamp)
+    val posterId = reference("poster_id", MediaFiles).nullable()
 }

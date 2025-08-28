@@ -14,9 +14,9 @@ jwt:
   audience: "jwt-audience"
   realm: "ktor sample app"
 postgres:
-  url: "jdbc:postgresql://localhost:5432/InRussian"
+  url: "jdbc:postgresql://localhost:5432/InRussianBackup"
   user: postgres
-  password: zex312ZEX
+  password: postgres
   maximumPoolSize: 10
   minimumIdle: 2
   connectionTimeout: 30000
