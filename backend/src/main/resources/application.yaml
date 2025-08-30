@@ -1,0 +1,30 @@
+ktor:
+  application:
+    modules:
+      - com.inRussian.ApplicationKt.module
+  deployment:
+    port: 8080
+    host: 0.0.0.0
+  development: true
+admin:
+  email: "admin@example.com"
+  password: "changeMeToAStrongPassword"
+jwt:
+  domain: "http://localhost:8080/"
+  audience: "jwt-audience"
+  realm: "ktor sample app"
+postgres:
+  url: "jdbc:postgresql://database:5432/InRussianBackup"
+  user: postgres
+  password: postgres
+  maximumPoolSize: 10
+  minimumIdle: 2
+  connectionTimeout: 30000
+mailer:
+  host: smtp.gmail.com
+  port: 587
+  username: mail@mail.ru
+  appPassword: password
+  from: mail@mail.ru
+  useTls: true
+
