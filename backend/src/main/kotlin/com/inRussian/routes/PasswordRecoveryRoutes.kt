@@ -55,37 +55,63 @@ fun Route.passwordRecoveryRoutes(
         }
 
         val status = recoveryRepo.check(email, code)
-        call.respond(HttpStatusCode.OK, RecoveryCheckResponse(ok = status == RecoveryCheckResult.VALID, reason = status.name.lowercase()))
+        call.respond(
+            HttpStatusCode.OK,
+            RecoveryCheckResponse(ok = status == RecoveryCheckResult.VALID, reason = status.name.lowercase())
+        )
     }
 
     post("/password/recovery/reset") {
         val req = runCatching { call.receive<PasswordResetRequest>() }.getOrElse {
-            return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_body"))
+            return@post call.respond(
+                HttpStatusCode.BadRequest,
+                PasswordResetResponse(ok = false, error = "invalid_body")
+            )
         }
         val email = req.email.trim().lowercase()
         val code = req.code.trim()
         val newPassword = req.newPassword
 
         if (email.isBlank() || code.isBlank() || newPassword.length < 8) {
-            return@post call.respond(HttpStatusCode.BadRequest, mapOf("error" to "invalid_request"))
+            return@post call.respond(
+                HttpStatusCode.BadRequest,
+                PasswordResetResponse(ok = false, error = "invalid_request")
+            )
         }
 
         val result = recoveryRepo.verifyAndConsume(email, code)
         if (result != RecoveryCheckResult.VALID) {
-            return@post call.respond(HttpStatusCode.OK, mapOf("ok" to false, "reason" to result.name.lowercase()))
+            return@post call.respond(
+                HttpStatusCode.OK,
+                PasswordResetResponse(ok = false, reason = result.name.lowercase())
+            )
         }
 
         val newHash = BCrypt.hashpw(newPassword, BCrypt.gensalt(12))
         val updated = userRepo.updatePassword(email, newHash)
 
         if (!updated) {
-            return@post call.respond(HttpStatusCode.InternalServerError, mapOf("ok" to false, "error" to "update_failed"))
+            return@post call.respond(
+                HttpStatusCode.InternalServerError,
+                PasswordResetResponse(ok = false, error = "update_failed")
+            )
         }
-        call.respond(HttpStatusCode.OK, mapOf("ok" to true))
+        call.respond(HttpStatusCode.OK, PasswordResetResponse(ok = true))
     }
 }
 
-@Serializable data class RecoveryRequest(val email: String)
-@Serializable data class RecoveryCheckRequest(val email: String, val code: String)
-@Serializable data class RecoveryCheckResponse(val ok: Boolean, val reason: String? = null)
-@Serializable data class PasswordResetRequest(val email: String, val code: String, val newPassword: String)
+@Serializable
+data class RecoveryRequest(val email: String)
+@Serializable
+data class RecoveryCheckRequest(val email: String, val code: String)
+@Serializable
+data class RecoveryCheckResponse(val ok: Boolean, val reason: String? = null)
+@Serializable
+data class PasswordResetRequest(val email: String, val code: String, val newPassword: String)
+
+@Serializable
+data class PasswordResetResponse(
+    val ok: Boolean,
+    val error: String? = null,
+    val reason: String? = null
+)
