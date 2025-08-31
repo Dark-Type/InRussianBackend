@@ -12,10 +12,12 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
-import java.math.BigDecimal
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
 import java.math.RoundingMode
+import kotlin.compareTo
+import kotlin.text.toDouble
+import kotlin.times
 
 interface StudentRepository {
     // UserBadges CRUD
@@ -33,7 +35,12 @@ interface StudentRepository {
     // UserTaskProgress CRUD
     suspend fun createTaskProgress(userId: String, taskId: String): UserTaskProgressItem
     suspend fun getTaskProgress(userId: String, taskId: String): UserTaskProgressItem?
-    suspend fun updateTaskProgress(userId: String, taskId: String, request: UpdateTaskProgressRequest): UserTaskProgressItem?
+    suspend fun updateTaskProgress(
+        userId: String,
+        taskId: String,
+        request: UpdateTaskProgressRequest
+    ): UserTaskProgressItem?
+
     suspend fun markTaskAsCompleted(userId: String, taskId: String, isCorrect: Boolean): UserTaskProgressItem?
 
     // UserCourseEnrollments CRUD
@@ -84,7 +91,7 @@ data class UpdateTaskProgressRequest(
     val shouldRetryAfterTasks: Int? = null
 )
 
-// Data classes for repository
+@Serializable
 data class UserTaskQueueItem(
     val id: String,
     val userId: String,
@@ -98,6 +105,7 @@ data class UserTaskQueueItem(
     val createdAt: String
 )
 
+@Serializable
 data class UserTaskProgressItem(
     val userId: String,
     val taskId: String,
@@ -109,26 +117,28 @@ data class UserTaskProgressItem(
     val shouldRetryAfterTasks: Int?
 )
 
+@Serializable
 data class UserCourseEnrollmentItem(
     val userId: String,
     val courseId: String,
     val enrolledAt: String,
     val completedAt: String?,
-    val progress: BigDecimal
+    val progress: Double
 )
 
+@Serializable
 data class SectionProgressItem(
     val sectionId: String,
     val totalTasks: Int,
     val completedTasks: Int,
-    val progressPercentage: BigDecimal
+    val progressPercentage: Double
 )
 
 data class CourseProgressItem(
     val courseId: String,
     val totalTasks: Int,
     val completedTasks: Int,
-    val progressPercentage: BigDecimal,
+    val progressPercentage: Double,
     val sectionsProgress: List<SectionProgressItem>
 )
 
@@ -228,7 +238,12 @@ class ExposedStudentRepository : StudentRepository {
     )
 
     // UserBadges CRUD
-    override suspend fun createUserBadge(userId: String, badgeId: String, courseId: String?, themeId: String?): Boolean = transaction {
+    override suspend fun createUserBadge(
+        userId: String,
+        badgeId: String,
+        courseId: String?,
+        themeId: String?
+    ): Boolean = transaction {
         try {
             UserBadges.insert {
                 it[UserBadges.userId] = UUID.fromString(userId)
@@ -361,13 +376,14 @@ class ExposedStudentRepository : StudentRepository {
         }
         return getTaskProgress(userId, taskId)
     }
+
     // UserCourseEnrollments CRUD
     override suspend fun enrollInCourse(userId: String, courseId: String): Boolean = transaction {
         try {
             UserCourseEnrollments.insert {
                 it[UserCourseEnrollments.userId] = UUID.fromString(userId)
                 it[UserCourseEnrollments.courseId] = UUID.fromString(courseId)
-                it[progress] = BigDecimal.ZERO
+                it[UserCourseEnrollments.progress] = 0.0
             }
             true
         } catch (_: Exception) {
@@ -389,14 +405,15 @@ class ExposedStudentRepository : StudentRepository {
         } > 0
     }
 
-    override suspend fun getCourseEnrollment(userId: String, courseId: String): UserCourseEnrollmentItem? = transaction {
-        UserCourseEnrollments.selectAll()
-            .where {
-                (UserCourseEnrollments.userId eq UUID.fromString(userId)) and
-                        (UserCourseEnrollments.courseId eq UUID.fromString(courseId))
-            }
-            .singleOrNull()?.toUserCourseEnrollment()
-    }
+    override suspend fun getCourseEnrollment(userId: String, courseId: String): UserCourseEnrollmentItem? =
+        transaction {
+            UserCourseEnrollments.selectAll()
+                .where {
+                    (UserCourseEnrollments.userId eq UUID.fromString(userId)) and
+                            (UserCourseEnrollments.courseId eq UUID.fromString(courseId))
+                }
+                .singleOrNull()?.toUserCourseEnrollment()
+        }
 
     // Content Gets
     override suspend fun getCoursesByUserLanguage(userId: String): List<Course> = transaction {
@@ -460,9 +477,9 @@ class ExposedStudentRepository : StudentRepository {
             .count().toInt()
 
         val progressPercentage = if (totalTasks > 0) {
-            BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 2, RoundingMode.HALF_UP).multiply(BigDecimal(100))
+            completedTasks.toDouble() / totalTasks * 100
         } else {
-            BigDecimal.ZERO
+            0.0
         }
 
         SectionProgressItem(sectionId, totalTasks, completedTasks, progressPercentage)
@@ -478,9 +495,9 @@ class ExposedStudentRepository : StudentRepository {
         val completedTasks = sectionsProgress.sumOf { it.completedTasks }
 
         val progressPercentage = if (totalTasks > 0) {
-            BigDecimal(completedTasks).divide(BigDecimal(totalTasks), 2, RoundingMode.HALF_UP).multiply(BigDecimal(100))
+            completedTasks.toDouble() / totalTasks * 100
         } else {
-            BigDecimal.ZERO
+            0.0
         }
 
         return CourseProgressItem(courseId, totalTasks, completedTasks, progressPercentage, sectionsProgress)
@@ -495,6 +512,7 @@ class ExposedStudentRepository : StudentRepository {
         }
         Reports.selectAll().where { Reports.id eq reportId }.single().toReport()
     }
+
     override suspend fun getTaskContent(taskId: String): List<TaskContentItem> = transaction {
         TaskContent.selectAll()
             .where { TaskContent.taskId eq UUID.fromString(taskId) }
