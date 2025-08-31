@@ -3,6 +3,7 @@ import com.inRussian.models.tasks.TaskBody
 import com.inRussian.models.tasks.TaskModel
 import com.inRussian.models.tasks.TaskType
 import com.inRussian.requests.content.CreateTaskModelRequest
+import com.inRussian.requests.content.UpdateTaskModelRequest
 import com.inRussian.tables.TaskEntity
 import com.inRussian.tables.TaskToTypes
 import com.inRussian.tables.TaskTypes
@@ -24,10 +25,12 @@ import kotlinx.serialization.modules.polymorphic
 import kotlinx.serialization.modules.subclass
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.UUID
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+
 
 class TaskRepository {
     object ByteArraySerializer : KSerializer<ByteArray> {
@@ -43,6 +46,41 @@ class TaskRepository {
         override fun deserialize(decoder: Decoder): ByteArray {
             return Base64.decode(decoder.decodeString())
         }
+    }
+    fun updateTask(taskId: UUID, request: UpdateTaskModelRequest): TaskModel? = transaction {
+        val updated = TaskEntity.update({ TaskEntity.id eq taskId }) { st ->
+            request.courseId?.let { st[TaskEntity.courseId] = UUID.fromString(it) }
+            request.taskBody?.let { st[TaskEntity.taskBody] = json.encodeToJsonElement(it) }
+            st[TaskEntity.updatedAt] = CurrentTimestamp
+        }
+
+        if (updated == 0) return@transaction null
+
+        request.taskTypes?.let { newTypes ->
+            TaskToTypes.deleteWhere { TaskToTypes.task eq taskId }
+
+            newTypes.forEach { taskType ->
+                val typeExists = TaskTypes
+                    .selectAll()
+                    .where { TaskTypes.name eq taskType.name }
+                    .count() > 0
+                if (!typeExists) {
+                    TaskTypes.insert { it[name] = taskType.name }
+                }
+                TaskToTypes.insert {
+                    it[task] = taskId
+                    it[typeName] = taskType.name
+                }
+            }
+        }
+
+        selectTaskDtoById(taskId)
+    }
+
+    fun deleteTask(taskId: UUID): Boolean = transaction {
+        TaskToTypes.deleteWhere { TaskToTypes.task eq taskId }
+        val deleted = TaskEntity.deleteWhere { TaskEntity.id eq taskId }
+        deleted > 0
     }
 
     fun createTask(request: CreateTaskModelRequest): TaskModel = transaction {

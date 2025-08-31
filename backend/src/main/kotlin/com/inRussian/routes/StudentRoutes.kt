@@ -455,67 +455,6 @@ fun Route.studentRoutes(studentService: StudentService) {
                 }
             }
 
-
-
-            post("/tasks/{taskId}/report") {
-                val principal = call.principal<JWTPrincipal>()!!
-                val userId = principal.payload.getClaim("userId").asString()
-                val taskId = call.parameters["taskId"]
-                val req = call.receive<Map<String, String>>()
-                val description = req["description"]
-                if (taskId == null || description == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        ErrorResponse(false, "Не указан taskId или description", null, System.currentTimeMillis())
-                    )
-                    return@post
-                }
-                val result = studentService.createReport(userId, taskId, description)
-                if (result.isSuccess) {
-                    val report = result.getOrNull()
-                    if (report != null) {
-                        call.respond(HttpStatusCode.OK, report)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(false, "Отчёт не создан", null, System.currentTimeMillis())
-                        )
-                    }
-                } else {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        ErrorResponse(false, "Не удалось создать отчёт", null, System.currentTimeMillis())
-                    )
-                }
-            }
-
-            get("/tasks/{taskId}/answer") {
-                val taskId = call.parameters["taskId"]
-                if (taskId == null) {
-                    call.respond(
-                        HttpStatusCode.BadRequest,
-                        ErrorResponse(false, "Не указан taskId", null, System.currentTimeMillis())
-                    )
-                    return@get
-                }
-                val result = studentService.getTaskAnswer(taskId)
-                if (result.isSuccess) {
-                    val answer = result.getOrNull()
-                    if (answer != null) {
-                        call.respond(HttpStatusCode.OK, answer)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.NotFound,
-                            ErrorResponse(false, "Ответ задачи не найден", null, System.currentTimeMillis())
-                        )
-                    }
-                } else {
-                    call.respond(
-                        HttpStatusCode.InternalServerError,
-                        ErrorResponse(false, "Не удалось получить ответ задачи", null, System.currentTimeMillis())
-                    )
-                }
-            }
         }
     }
 }
