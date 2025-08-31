@@ -18,7 +18,7 @@ sealed interface TaskBody {
 
     @Serializable
     @SerialName("TextInputTask")
-    data class TextInputTask(val variant: List<Pair<String, String>>) : TaskBody
+    data class TextInputTask(val sentence: List<Sentence>) : TaskBody
 
     @Serializable
     @SerialName("TextInputWithVariantTask")
@@ -28,3 +28,15 @@ sealed interface TaskBody {
     @SerialName("ImageTask")
     data class ImageTask(val variant: List<Pair<String, String>>) : TaskBody
 }
+@Serializable
+data class Sentence(
+    val text: String,
+    val gaps: List<Gap>
+)
+
+@Serializable
+data class Gap(
+    val enter: String,
+    val correctWord: String,
+    val index: Int
+)
