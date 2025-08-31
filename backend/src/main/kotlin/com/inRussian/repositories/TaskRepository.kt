@@ -49,7 +49,7 @@ class TaskRepository {
     }
     fun updateTask(taskId: UUID, request: UpdateTaskModelRequest): TaskModel? = transaction {
         val updated = TaskEntity.update({ TaskEntity.id eq taskId }) { st ->
-            request.courseId?.let { st[TaskEntity.courseId] = UUID.fromString(it) }
+            request.themeId?.let { st[TaskEntity.themeId] = UUID.fromString(it) }
             request.taskBody?.let { st[TaskEntity.taskBody] = json.encodeToJsonElement(it) }
             st[TaskEntity.updatedAt] = CurrentTimestamp
         }
@@ -89,7 +89,7 @@ class TaskRepository {
         val taskBodyJson: JsonElement = json.encodeToJsonElement(request.taskBody)
 
         val insertedId = TaskEntity.insertAndGetId { task ->
-            task[courseId] = UUID.fromString(request.courseId)
+            task[themeId] = UUID.fromString(request.themeId)
             task[taskBody] = taskBodyJson
         }.value
 
@@ -118,8 +118,8 @@ class TaskRepository {
             ?: throw IllegalStateException("Created task not found: $id")
     }
 
-    fun getTaskByCourseId(id: UUID): List<TaskModel> = transaction {
-        val tasks = TaskEntity.selectAll().where { TaskEntity.courseId eq id }.map { it[TaskEntity.id].value }
+    fun getTaskBythemeId(id: UUID): List<TaskModel> = transaction {
+        val tasks = TaskEntity.selectAll().where { TaskEntity.themeId eq id }.map { it[TaskEntity.id].value }
 
         tasks.map { taskId ->
             selectTaskDtoById(taskId)

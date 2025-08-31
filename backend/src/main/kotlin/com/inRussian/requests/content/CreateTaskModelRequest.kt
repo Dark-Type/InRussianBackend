@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CreateTaskModelRequest(
-    val courseId: String,
+    val themeId: String,
     val taskBody: TaskBody,
     val taskTypes: List<TaskType>
 )

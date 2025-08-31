@@ -7,7 +7,7 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 import org.jetbrains.exposed.sql.json.jsonb
 
 object TaskEntity : UUIDTable("task_entity") {
-    val courseId = reference("course_id", Courses)
+    val themeId = reference("theme_id", Themes)
     val taskBody = jsonb<JsonElement>("task_body", json)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
     val updatedAt = timestamp("updated_at").defaultExpression(CurrentTimestamp)

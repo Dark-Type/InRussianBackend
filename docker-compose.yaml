@@ -33,7 +33,7 @@ services:
         - BUILD_DIR=dist
         - VITE_API_URL=/api
     ports:
-      - "81:81"
+      - "80:80"
       - "443:443"
     depends_on:
       - backend

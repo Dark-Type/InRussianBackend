@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class UpdateTaskModelRequest(
-    val courseId: String? = null,
+    val themeId: String? = null,
     val taskBody: TaskBody? = null,
     val taskTypes: List<TaskType>? = null
 )
