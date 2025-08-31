@@ -14,6 +14,7 @@ import com.inRussian.repositories.MediaRepository
 import com.inRussian.repositories.PasswordRecoveryTokenRepository
 import com.inRussian.repositories.StaffProfileRepository
 import com.inRussian.repositories.StudentRepository
+import com.inRussian.repositories.TaskRepository
 import com.inRussian.repositories.UserProfileRepository
 import com.inRussian.repositories.UserRepository
 
@@ -38,6 +39,7 @@ import com.inRussian.routes.adminRoutes
 import com.inRussian.routes.contentManagerRoutes
 import com.inRussian.routes.mediaRoutes
 import com.inRussian.routes.passwordRecoveryRoutes
+import com.inRussian.routes.taskRoutes
 import com.inRussian.services.MediaService
 import com.inRussian.services.mailer.GmailMailer
 import com.inRussian.services.mailer.Mailer
@@ -81,6 +83,7 @@ fun Application.configureRouting() {
         expertRoutes(expertService)
         studentRoutes(studentService)
         mediaRoutes(mediaService)
+        taskRoutes(TaskRepository())
     }
 
 }

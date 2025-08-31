@@ -31,7 +31,8 @@ fun Application.configureDatabase() {
         SchemaUtils.create(
             Badges, Courses, CourseStatistics, MediaFiles, Sections, StaffProfiles, Users, PasswordRecoveryTokens,
             TaskAnswerOptions, TaskAnswers, Tasks, Themes, TaskContent, UserBadges, UserCourseEnrollments,
-            UserCourseStatistics, UserLanguageSkills, UserProfiles, UserStatistics, UserTaskProgress, UserTaskQueue
+            UserCourseStatistics, UserLanguageSkills, UserProfiles, UserStatistics, UserTaskProgress, UserTaskQueue,
+            TaskEntity, TaskTypes, TaskToTypes,
         )
     }
     try {
