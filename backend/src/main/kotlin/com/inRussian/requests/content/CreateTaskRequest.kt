@@ -106,6 +106,7 @@ data class UpdateSectionRequest(
 data class CreateCourseRequest(
     val name: String,
     val description: String?,
+    val coursePoster: String?,
     val authorUrl: String?,
     val language: String,
     val isPublished: Boolean = false
@@ -117,6 +118,7 @@ data class UpdateCourseRequest(
     val description: String?,
     val authorUrl: String?,
     val language: String?,
+    val coursePoster: String?,
     val isPublished: Boolean?
 )
 
