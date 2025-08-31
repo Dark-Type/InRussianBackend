@@ -8,5 +8,6 @@ import kotlinx.serialization.Serializable
 data class CreateTaskModelRequest(
     val themeId: String,
     val taskBody: TaskBody,
-    val taskTypes: List<TaskType>
+    val taskTypes: List<TaskType>,
+    val question: String
 )

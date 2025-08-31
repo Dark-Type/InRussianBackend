@@ -51,6 +51,7 @@ class TaskRepository {
         val updated = TaskEntity.update({ TaskEntity.id eq taskId }) { st ->
             request.themeId?.let { st[TaskEntity.themeId] = UUID.fromString(it) }
             request.taskBody?.let { st[TaskEntity.taskBody] = json.encodeToJsonElement(it) }
+            request.question?.let { st[TaskEntity.question] = it }
             st[TaskEntity.updatedAt] = CurrentTimestamp
         }
 
@@ -91,6 +92,7 @@ class TaskRepository {
         val insertedId = TaskEntity.insertAndGetId { task ->
             task[themeId] = UUID.fromString(request.themeId)
             task[taskBody] = taskBodyJson
+            task[question] = request.question
         }.value
 
         request.taskTypes.forEach { taskType ->
@@ -172,6 +174,7 @@ class TaskRepository {
             id = taskEntity[TaskEntity.id].value.toString(),
             taskType = taskTypes,
             taskBody = taskBody,
+            question = taskEntity[TaskEntity.question],
             createdAt = taskEntity[TaskEntity.createdAt].toString(),
             updatedAt = taskEntity[TaskEntity.updatedAt].toString()
         )
@@ -182,6 +185,7 @@ class TaskRepository {
             id = this[TaskEntity.id].value.toString(),
             taskType = types,
             taskBody = json.decodeFromJsonElement(this[TaskEntity.taskBody]),
+            question = this[TaskEntity.question],
             createdAt = this[TaskEntity.createdAt].toString(),
             updatedAt = this[TaskEntity.updatedAt].toString()
         )

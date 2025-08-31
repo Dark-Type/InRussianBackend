@@ -8,5 +8,6 @@ import kotlinx.serialization.Serializable
 data class UpdateTaskModelRequest(
     val themeId: String? = null,
     val taskBody: TaskBody? = null,
-    val taskTypes: List<TaskType>? = null
+    val taskTypes: List<TaskType>? = null,
+    val question: String? = null
 )
