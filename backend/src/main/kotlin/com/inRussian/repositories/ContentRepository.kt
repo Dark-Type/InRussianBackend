@@ -8,8 +8,10 @@ import com.inRussian.tables.TaskContent
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
+import org.jetbrains.exposed.sql.name
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
+import kotlin.toString
 
 interface ContentRepository {
     // Tasks
@@ -140,9 +142,8 @@ class ExposedContentRepository : ContentRepository {
         isPublished = this[Courses.isPublished],
         createdAt = this[Courses.createdAt].toString(),
         updatedAt = this[Courses.updatedAt].toString(),
-        posterId = TODO()
+        posterId = this[Courses.posterId]?.toString()
     )
-
     private fun ResultRow.toReport() = Report(
         id = this[Reports.id].toString(),
         description = this[Reports.description],
@@ -434,12 +435,12 @@ class ExposedContentRepository : ContentRepository {
             it[name] = request.name
             it[description] = request.description
             it[Courses.authorId] = UUID.fromString(authorId)
+            it[posterId] = request.coursePoster?.let(UUID::fromString)
             it[authorUrl] = request.authorUrl
             it[language] = request.language
             it[isPublished] = request.isPublished
             it[updatedAt] = CurrentTimestamp
         }
-
         Courses.selectAll().where { Courses.id eq courseId }.single().toCourse()
     }
 
@@ -457,6 +458,7 @@ class ExposedContentRepository : ContentRepository {
                 request.authorUrl?.let { url -> it[authorUrl] = url }
                 request.language?.let { lang -> it[language] = lang }
                 request.isPublished?.let { published -> it[isPublished] = published }
+                request.coursePoster?.let { poster -> it[posterId] = UUID.fromString(poster) } // FIX: обновление постера
                 it[updatedAt] = CurrentTimestamp
             }
         }

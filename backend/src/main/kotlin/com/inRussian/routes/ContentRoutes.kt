@@ -8,7 +8,6 @@ import io.ktor.server.routing.*
 
 
 fun Route.contentRoutes(contentService: ContentService) {
-        // TODO("fix authenticate for `content-jwt`")
         get("/content/tasks/{taskId}") {
             val taskId = call.parameters["taskId"]
             if (taskId == null) {
