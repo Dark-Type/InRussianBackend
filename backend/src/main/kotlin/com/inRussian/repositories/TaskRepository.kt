@@ -120,7 +120,7 @@ class TaskRepository {
             ?: throw IllegalStateException("Created task not found: $id")
     }
 
-    fun getTaskBythemeId(id: UUID): List<TaskModel> = transaction {
+    fun getTaskByThemeId(id: UUID): List<TaskModel> = transaction {
         val tasks = TaskEntity.selectAll().where { TaskEntity.themeId eq id }.map { it[TaskEntity.id].value }
 
         tasks.map { taskId ->

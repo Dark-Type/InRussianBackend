@@ -14,6 +14,7 @@ import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.plus
+import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.compareTo
 import kotlin.text.toDouble
@@ -173,7 +174,7 @@ class ExposedStudentRepository : StudentRepository {
         courseId = this[UserCourseEnrollments.courseId].toString(),
         enrolledAt = this[UserCourseEnrollments.enrolledAt].toString(),
         completedAt = this[UserCourseEnrollments.completedAt]?.toString(),
-        progress = this[UserCourseEnrollments.progress]
+        progress = this[UserCourseEnrollments.progress].toDouble()
     )
 
     private fun ResultRow.toBadge() = Badge(
@@ -383,7 +384,7 @@ class ExposedStudentRepository : StudentRepository {
             UserCourseEnrollments.insert {
                 it[UserCourseEnrollments.userId] = UUID.fromString(userId)
                 it[UserCourseEnrollments.courseId] = UUID.fromString(courseId)
-                it[UserCourseEnrollments.progress] = 0.0
+                it[UserCourseEnrollments.progress] = BigDecimal.ZERO
             }
             true
         } catch (_: Exception) {

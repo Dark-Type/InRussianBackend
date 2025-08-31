@@ -25,7 +25,7 @@ fun Route.taskRoutes(taskRepository: TaskRepository) {
             }
             get("/theme/{id}") {
                 val courseId = UUID.fromString(call.parameters["id"])
-                call.respond(HttpStatusCode.OK, taskRepository.getTaskBythemeId(courseId))
+                call.respond(HttpStatusCode.OK, taskRepository.getTaskByThemeId(courseId))
             }
         }
         authenticate("content-jwt") {
