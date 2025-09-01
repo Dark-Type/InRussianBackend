@@ -15,29 +15,6 @@ import kotlin.toString
 
 interface ContentRepository {
     // Tasks
-    suspend fun createTask(request: CreateTaskRequest): TaskWithDetails
-    suspend fun getTask(taskId: String): TaskWithDetails?
-    suspend fun updateTask(taskId: String, request: UpdateTaskRequest): TaskWithDetails?
-    suspend fun deleteTask(taskId: String): Boolean
-    suspend fun getTasksByTheme(themeId: String): List<TaskWithDetails>
-
-    // Task Content
-    suspend fun createTaskContent(taskId: String, request: CreateTaskContentRequest): TaskContentItem
-    suspend fun getTaskContent(contentId: String): TaskContentItem?
-    suspend fun updateTaskContent(contentId: String, request: UpdateTaskContentRequest): TaskContentItem?
-    suspend fun deleteTaskContent(contentId: String): Boolean
-
-    // Task Answers
-    suspend fun createTaskAnswer(taskId: String, request: CreateTaskAnswerRequest): TaskAnswerItem
-    suspend fun getTaskAnswer(taskId: String): TaskAnswerItem?
-    suspend fun updateTaskAnswer(taskId: String, request: UpdateTaskAnswerRequest): TaskAnswerItem?
-    suspend fun deleteTaskAnswer(taskId: String): Boolean
-
-    // Task Answer Options
-    suspend fun createTaskAnswerOption(taskId: String, request: CreateTaskAnswerOptionRequest): TaskAnswerOptionItem
-    suspend fun getTaskAnswerOption(optionId: String): TaskAnswerOptionItem?
-    suspend fun updateTaskAnswerOption(optionId: String, request: UpdateTaskAnswerOptionRequest): TaskAnswerOptionItem?
-    suspend fun deleteTaskAnswerOption(optionId: String): Boolean
 
     // Themes
     suspend fun createTheme(request: CreateThemeRequest): Theme
@@ -152,176 +129,7 @@ class ExposedContentRepository : ContentRepository {
         createdAt = this[Reports.createdAt].toString()
     )
 
-    override suspend fun createTask(request: CreateTaskRequest): TaskWithDetails = transaction {
-        val taskId = Tasks.insertAndGetId {
-            it[themeId] = UUID.fromString(request.themeId)
-            it[name] = request.name
-            it[taskType] = request.taskType
-            it[question] = request.question
-            it[instructions] = request.instructions
-            it[isTraining] = request.isTraining
-            it[orderNum] = request.orderNum
-        }
 
-        Tasks.selectAll().where { Tasks.id eq taskId }.single().toTask()
-    }
-
-    override suspend fun getTask(taskId: String): TaskWithDetails? = transaction {
-        Tasks.selectAll().where { Tasks.id eq UUID.fromString(taskId) }
-            .singleOrNull()?.toTask()?.let { task ->
-                val content = TaskContent.selectAll().where { TaskContent.taskId eq UUID.fromString(taskId) }
-                    .orderBy(TaskContent.orderNum)
-                    .map { it.toTaskContent() }
-
-                val answer = TaskAnswers.selectAll().where { TaskAnswers.taskId eq UUID.fromString(taskId) }
-                    .singleOrNull()?.toTaskAnswer()
-
-                val options =
-                    TaskAnswerOptions.selectAll().where { TaskAnswerOptions.taskId eq UUID.fromString(taskId) }
-                        .orderBy(TaskAnswerOptions.orderNum)
-                        .map { it.toTaskAnswerOption() }
-
-                task.copy(content = content, answer = answer, answerOptions = options)
-            }
-    }
-
-    override suspend fun updateTask(taskId: String, request: UpdateTaskRequest): TaskWithDetails? {
-        val taskUuid = UUID.fromString(taskId)
-        transaction {
-            Tasks.update({ Tasks.id eq taskUuid }) {
-                request.name?.let { name -> it[Tasks.name] = name }
-                request.question?.let { question -> it[Tasks.question] = question }
-                request.instructions?.let { instructions -> it[Tasks.instructions] = instructions }
-                request.isTraining?.let { training -> it[Tasks.isTraining] = training }
-                request.orderNum?.let { order -> it[Tasks.orderNum] = order }
-            }
-        }
-        return getTask(taskId)
-    }
-
-    override suspend fun deleteTask(taskId: String): Boolean = transaction {
-        val taskUuid = UUID.fromString(taskId)
-        TaskContent.deleteWhere { TaskContent.taskId eq taskUuid }
-        TaskAnswers.deleteWhere { TaskAnswers.taskId eq taskUuid }
-        TaskAnswerOptions.deleteWhere { TaskAnswerOptions.taskId eq taskUuid }
-        Tasks.deleteWhere { Tasks.id eq taskUuid } > 0
-    }
-
-    override suspend fun getTasksByTheme(themeId: String): List<TaskWithDetails> = transaction {
-        Tasks.selectAll().where { Tasks.themeId eq UUID.fromString(themeId) }
-            .orderBy(Tasks.orderNum)
-            .map { it.toTask() }
-    }
-
-    override suspend fun createTaskContent(taskId: String, request: CreateTaskContentRequest): TaskContentItem =
-        transaction {
-            val contentId = TaskContent.insertAndGetId {
-                it[TaskContent.taskId] = UUID.fromString(taskId)
-                it[contentType] = request.contentType
-                it[contentId] = request.contentId
-                it[description] = request.description
-                it[transcription] = request.transcription
-                it[translation] = request.translation
-                it[orderNum] = request.orderNum
-            }
-
-            TaskContent.selectAll().where { TaskContent.id eq contentId }.single().toTaskContent()
-        }
-
-    override suspend fun getTaskContent(contentId: String): TaskContentItem? = transaction {
-        TaskContent.selectAll().where { TaskContent.id eq UUID.fromString(contentId) }
-            .singleOrNull()?.toTaskContent()
-    }
-
-    override suspend fun updateTaskContent(contentId: String, request: UpdateTaskContentRequest): TaskContentItem? {
-        val contentUuid = UUID.fromString(contentId)
-        transaction {
-            TaskContent.update({ TaskContent.id eq contentUuid }) {
-                request.contentType?.let { type -> it[contentType] = type }
-                request.contentId?.let { id -> it[TaskContent.contentId] = id }
-                request.description?.let { desc -> it[description] = desc }
-                request.transcription?.let { trans -> it[transcription] = trans }
-                request.translation?.let { transl -> it[translation] = transl }
-                request.orderNum?.let { order -> it[orderNum] = order }
-            }
-        }
-        return getTaskContent(contentId)
-    }
-
-    override suspend fun deleteTaskContent(contentId: String): Boolean = transaction {
-        TaskContent.deleteWhere { TaskContent.id eq UUID.fromString(contentId) } > 0
-    }
-
-    override suspend fun createTaskAnswer(taskId: String, request: CreateTaskAnswerRequest): TaskAnswerItem =
-        transaction {
-            TaskAnswers.insert {
-                it[TaskAnswers.taskId] = UUID.fromString(taskId)
-                it[answerType] = request.answerType
-                it[correctAnswer] = request.correctAnswer
-            }
-
-            TaskAnswers.selectAll().where { TaskAnswers.taskId eq UUID.fromString(taskId) }.single().toTaskAnswer()
-        }
-
-    override suspend fun getTaskAnswer(taskId: String): TaskAnswerItem? = transaction {
-        TaskAnswers.selectAll().where { TaskAnswers.taskId eq UUID.fromString(taskId) }
-            .singleOrNull()?.toTaskAnswer()
-    }
-
-    override suspend fun updateTaskAnswer(taskId: String, request: UpdateTaskAnswerRequest): TaskAnswerItem? {
-        val taskUuid = UUID.fromString(taskId)
-        transaction {
-            TaskAnswers.update({ TaskAnswers.taskId eq taskUuid }) {
-                request.answerType?.let { type -> it[TaskAnswers.answerType] = type }
-                request.correctAnswer?.let { answer -> it[TaskAnswers.correctAnswer] = answer }
-            }
-        }
-        return getTaskAnswer(taskId)
-    }
-
-    override suspend fun deleteTaskAnswer(taskId: String): Boolean = transaction {
-        TaskAnswers.deleteWhere { TaskAnswers.taskId eq UUID.fromString(taskId) } > 0
-    }
-
-    override suspend fun createTaskAnswerOption(
-        taskId: String,
-        request: CreateTaskAnswerOptionRequest
-    ): TaskAnswerOptionItem = transaction {
-        val optionId = TaskAnswerOptions.insertAndGetId {
-            it[TaskAnswerOptions.taskId] = UUID.fromString(taskId)
-            it[optionText] = request.optionText
-            it[optionAudioId] = request.optionAudioId
-            it[isCorrect] = request.isCorrect
-            it[orderNum] = request.orderNum
-        }
-
-        TaskAnswerOptions.selectAll().where { TaskAnswerOptions.id eq optionId }.single().toTaskAnswerOption()
-    }
-
-    override suspend fun getTaskAnswerOption(optionId: String): TaskAnswerOptionItem? = transaction {
-        TaskAnswerOptions.selectAll().where { TaskAnswerOptions.id eq UUID.fromString(optionId) }
-            .singleOrNull()?.toTaskAnswerOption()
-    }
-
-    override suspend fun updateTaskAnswerOption(
-        optionId: String,
-        request: UpdateTaskAnswerOptionRequest
-    ): TaskAnswerOptionItem? {
-        val optionUuid = UUID.fromString(optionId)
-        transaction {
-            TaskAnswerOptions.update({ TaskAnswerOptions.id eq optionUuid }) {
-                request.optionText?.let { text -> it[optionText] = text }
-                request.optionAudioId?.let { audio -> it[optionAudioId] = audio }
-                request.isCorrect?.let { correct -> it[isCorrect] = correct }
-                request.orderNum?.let { order -> it[orderNum] = order }
-            }
-        }
-        return getTaskAnswerOption(optionId)
-    }
-
-    override suspend fun deleteTaskAnswerOption(optionId: String): Boolean = transaction {
-        TaskAnswerOptions.deleteWhere { TaskAnswerOptions.id eq UUID.fromString(optionId) } > 0
-    }
 
     override suspend fun createTheme(request: CreateThemeRequest): Theme = transaction {
         val themeId = Themes.insertAndGetId {
@@ -528,26 +336,28 @@ class ExposedContentRepository : ContentRepository {
         val coursesCount = Courses.selectAll().count()
         val sectionsCount = Sections.selectAll().count()
         val themesCount = Themes.selectAll().count()
-        val tasksCount = Tasks.selectAll().count()
+        val tasksCount = TaskEntity.selectAll().count()
 
         CountStats(coursesCount, sectionsCount, themesCount, tasksCount)
     }
 
     override suspend fun getCourseTasksCount(courseId: String): Long = transaction {
-        (Sections innerJoin Themes innerJoin Tasks)
+        (Sections innerJoin Themes innerJoin TaskEntity)
             .selectAll()
             .where { Sections.courseId eq UUID.fromString(courseId) }
             .count()
     }
 
     override suspend fun getSectionTasksCount(sectionId: String): Long = transaction {
-        (Themes innerJoin Tasks)
+        (Themes innerJoin TaskEntity)
             .selectAll()
             .where { Themes.sectionId eq UUID.fromString(sectionId) }
             .count()
     }
-
     override suspend fun getThemeTasksCount(themeId: String): Long = transaction {
-        Tasks.selectAll().where { Tasks.themeId eq UUID.fromString(themeId) }.count()
+        TaskEntity
+            .selectAll()
+            .where { TaskEntity.themeId eq UUID.fromString(themeId) }
+            .count()
     }
 }

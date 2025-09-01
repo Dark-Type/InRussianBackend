@@ -8,93 +8,11 @@ import io.ktor.server.routing.*
 
 
 fun Route.contentRoutes(contentService: ContentService) {
-        get("/content/tasks/{taskId}") {
-            val taskId = call.parameters["taskId"]
-            if (taskId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Missing task ID")
-                return@get
-            }
-            val result = contentService.getTask(taskId)
-            if (result.isSuccess) {
-                call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-            } else {
-                call.respond(HttpStatusCode.NotFound, "Task not found")
-            }
-        }
 
 
     authenticate("auth-jwt") {
         route("/content") {
 
-            route("/tasks") {
-
-
-//                get("/{taskId}") {
-//                    val taskId = call.parameters["taskId"]
-//                    if (taskId == null) {
-//                        call.respond(HttpStatusCode.BadRequest, "Missing task ID")
-//                        return@get
-//                    }
-//
-//                    val result = contentService.getTask(taskId)
-//                    if (result.isSuccess) {
-//                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-//                    } else {
-//                        call.respond(HttpStatusCode.NotFound, "Task not found")
-//                    }
-//                }
-
-
-                route("/{taskId}/content") {
-
-                    get("/{contentId}") {
-                        val contentId = call.parameters["contentId"]
-                        if (contentId == null) {
-                            call.respond(HttpStatusCode.BadRequest, "Missing content ID")
-                            return@get
-                        }
-                        val result = contentService.getTaskContent(contentId)
-                        if (result.isSuccess) {
-                            call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                        } else {
-                            call.respond(HttpStatusCode.NotFound, "TaskContent not found")
-                        }
-                    }
-                }
-
-                route("/{taskId}/answer") {
-
-                    get {
-                        val taskId = call.parameters["taskId"]
-                        if (taskId == null) {
-                            call.respond(HttpStatusCode.BadRequest, "Missing task ID")
-                            return@get
-                        }
-                        val result = contentService.getTaskAnswer(taskId)
-                        if (result.isSuccess) {
-                            call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                        } else {
-                            call.respond(HttpStatusCode.NotFound, "TaskAnswer not found")
-                        }
-                    }
-                }
-
-                route("/{taskId}/options") {
-                    get("/{optionId}") {
-                        val optionId = call.parameters["optionId"]
-                        if (optionId == null) {
-                            call.respond(HttpStatusCode.BadRequest, "Missing option ID")
-                            return@get
-                        }
-                        val result = contentService.getTaskAnswerOption(optionId)
-                        if (result.isSuccess) {
-                            call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                        } else {
-                            call.respond(HttpStatusCode.NotFound, "TaskAnswerOption not found")
-                        }
-                    }
-                }
-            }
 
             route("/themes") {
 
@@ -109,19 +27,6 @@ fun Route.contentRoutes(contentService: ContentService) {
                         call.respond(HttpStatusCode.OK, result.getOrNull()!!)
                     } else {
                         call.respond(HttpStatusCode.NotFound, "Theme not found")
-                    }
-                }
-                get("/{themeId}/tasks") {
-                    val themeId = call.parameters["themeId"]
-                    if (themeId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing theme ID")
-                        return@get
-                    }
-                    val result = contentService.getTasksByTheme(themeId)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(HttpStatusCode.InternalServerError, "Failed to get tasks")
                     }
                 }
 
