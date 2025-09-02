@@ -37,6 +37,14 @@ sealed interface TaskBody {
     @Serializable
     data class ImageAndSelect(val task: ImageAndSelectModel) : TaskBody
 
+    @SerialName("ConstructSentenceTask")
+    @Serializable
+    data class ConstructSentenceTask(val task: ConstructSentenceModel) : TaskBody
+
+    @SerialName("SelectWordsTask")
+    @Serializable
+    data class SelectWordsTask(val task: SelectWordsModel) : TaskBody
+
 }
 
 @Serializable
@@ -49,18 +57,19 @@ data class TextInputModel(
 @Serializable
 data class Gap(
     val correctWord: String,
-    val index: Int
+    val indexWord: Int
 )
 
 @Serializable
 data class TextInputWithVariantModel(
+    val label: String,
     val text: String,
     val gaps: List<GapWithVariantModel>
 )
 
 @Serializable
 data class GapWithVariantModel(
-    val position: Int,
+    val indexWord: Int,
     val variants: List<String>,
     val correctVariant: String,
 )
@@ -78,11 +87,27 @@ data class AudioBlocks(
     val audio: String,
     val descriptionTranslate: String?,
 )
+
 @Serializable
 data class ImageAndSelectModel(
     val imageBlocks: List<ImageBlocks>,
     val variants: List<Pair<String, Boolean>>
 )
+
+
+@Serializable
+data class ConstructSentenceModel(
+    val audio: String?,
+    val variants: List<String>
+)
+
+@Serializable
+data class SelectWordsModel(
+    val audio: String,
+    val variants: List<Pair<String, Boolean>>
+)
+
+
 @Serializable
 data class ImageBlocks(
     val name: String,
