@@ -7,7 +7,6 @@ import com.inRussian.requests.content.UpdateTaskModelRequest
 import com.inRussian.tables.TaskEntity
 import com.inRussian.tables.TaskToTypes
 import com.inRussian.tables.TaskTypes
-import com.inRussian.tables.Tasks
 import com.inRussian.tables.json
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.PolymorphicSerializer
@@ -154,11 +153,11 @@ class TaskRepository {
         val taskBody = Json {
             serializersModule = SerializersModule {
                 polymorphic(TaskBody::class) {
-                    subclass(TaskBody.AudioTask::class)
-                    subclass(TaskBody.TextTask::class)
+                    subclass(TaskBody.AudioConnectTask::class)
+                    subclass(TaskBody.TextConnectTask::class)
                     subclass(TaskBody.TextInputTask::class)
                     subclass(TaskBody.TextInputWithVariantTask::class)
-                    subclass(TaskBody.ImageTask::class)
+                    subclass(TaskBody.ImageConnectTask::class)
                 }
                 contextual(ByteArray::class) {
                     ByteArraySerializer

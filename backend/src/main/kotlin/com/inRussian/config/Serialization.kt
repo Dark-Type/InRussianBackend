@@ -12,11 +12,11 @@ import kotlinx.serialization.modules.subclass
 fun Application.configureSerialization() {
     val taskBodyModule = SerializersModule {
         polymorphic(TaskBody::class) {
-            subclass(TaskBody.TextTask::class)
-            subclass(TaskBody.AudioTask::class)
+            subclass(TaskBody.TextConnectTask::class)
+            subclass(TaskBody.AudioConnectTask::class)
             subclass(TaskBody.TextInputTask::class)
             subclass(TaskBody.TextInputWithVariantTask::class)
-            subclass(TaskBody.ImageTask::class)
+            subclass(TaskBody.ImageConnectTask::class)
             subclass(TaskBody.ListenAndSelect::class)
         }
     }
