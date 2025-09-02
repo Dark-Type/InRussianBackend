@@ -44,7 +44,6 @@ data class TextInputModel(
     val gaps: List<Gap>
 )
 
-
 @Serializable
 data class Gap(
     val correctWord: String,

@@ -17,6 +17,13 @@ import com.inRussian.repositories.StudentRepository
 import com.inRussian.repositories.TaskRepository
 import com.inRussian.repositories.UserProfileRepository
 import com.inRussian.repositories.UserRepository
+import com.inRussian.repositories.v2.AttemptRepository
+import com.inRussian.repositories.v2.BadgeRepository
+import com.inRussian.repositories.v2.ProgressRepository
+import com.inRussian.repositories.v2.QueueRepository
+import com.inRussian.repositories.v2.SectionCompletionRepository
+import com.inRussian.repositories.v2.StatsRepository
+import com.inRussian.repositories.v2.TaskStateRepository
 
 import com.inRussian.routes.authRoutes
 import com.inRussian.routes.contentRoutes
@@ -40,9 +47,20 @@ import com.inRussian.routes.contentManagerRoutes
 import com.inRussian.routes.mediaRoutes
 import com.inRussian.routes.passwordRecoveryRoutes
 import com.inRussian.routes.taskRoutes
+import com.inRussian.routes.v2.attemptRoutes
+import com.inRussian.routes.v2.badgeRoutes
+import com.inRussian.routes.v2.courseRoutes
+import com.inRussian.routes.v2.sectionRoutes
+import com.inRussian.routes.v2.statsRoutes
 import com.inRussian.services.MediaService
 import com.inRussian.services.mailer.GmailMailer
 import com.inRussian.services.mailer.Mailer
+import com.inRussian.services.v2.BadgeService
+import com.inRussian.services.v2.BadgesQueryService
+import com.inRussian.services.v2.ProgressService
+import com.inRussian.services.v2.QueueService
+import com.inRussian.services.v2.SolveService
+import com.inRussian.services.v2.StatsService
 
 
 fun Application.configureRouting() {
@@ -60,6 +78,29 @@ fun Application.configureRouting() {
     val expertService: ExpertService = ExpertServiceImpl(
         adminRepository = adminRepository,
     )
+    val attemptRepo = AttemptRepository()
+    val stateRepo = TaskStateRepository()
+    val queueRepo = QueueRepository()
+    val progressRepo = ProgressRepository()
+    val badgeRepo = BadgeRepository()
+    val completionRepo = SectionCompletionRepository()
+    val statsRepo = StatsRepository()
+    val badgesQueryService = BadgesQueryService(badgeRepo)
+
+
+    // Services
+    val queueService = QueueService(queueRepo)
+    val progressService = ProgressService(progressRepo)
+    val badgeService = BadgeService(badgeRepo)
+    val solveService = SolveService(
+        attemptRepo = attemptRepo,
+        stateRepo = stateRepo,
+        queueRepo = queueRepo,
+        progressRepo = progressRepo,
+        badgeService = badgeService,
+        completionRepo = completionRepo
+    )
+    val statsService = StatsService(statsRepo, progressRepo)
     val mailer: Mailer = GmailMailer(
         host = environment.config.property("mailer.host").getString(),
         port = environment.config.property("mailer.port").getString().toInt(),
@@ -84,6 +125,11 @@ fun Application.configureRouting() {
         studentRoutes(studentService)
         mediaRoutes(mediaService)
         taskRoutes(TaskRepository())
+        sectionRoutes(queueService, progressService)
+        courseRoutes(progressService)
+        attemptRoutes(solveService)
+        badgeRoutes(badgesQueryService)
+        statsRoutes(statsService)
     }
 
 }

@@ -78,7 +78,7 @@ class ExposedUserRepository : UserRepository {
             it[systemLanguage] = user.systemLanguage
             it[avatarId] = user.avatarId
             it[status] = user.status
-            it[updatedAt] = java.time.Instant.now()
+            it[updatedAt] = Instant.now()
         }
         user
     }

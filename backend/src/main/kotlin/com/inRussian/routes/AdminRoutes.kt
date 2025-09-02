@@ -2,7 +2,6 @@ package com.inRussian.routes
 
 import com.inRussian.models.users.UserRole
 import com.inRussian.models.users.UserStatus
-import com.inRussian.requests.admin.UpdateUserRequest
 import com.inRussian.requests.users.*
 import com.inRussian.responses.common.ErrorResponse
 import com.inRussian.responses.auth.MessageResponse
@@ -16,7 +15,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
 fun Route.adminRoutes(adminService: AdminService) {
-    // TODO("fix authenticate for `content-jwt`")
     get("admin/users/{userId}") {
         val userId = call.parameters["userId"]
         if (userId == null) {

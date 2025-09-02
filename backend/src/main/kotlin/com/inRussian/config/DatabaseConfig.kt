@@ -2,6 +2,15 @@ package com.inRussian.config
 
 import com.inRussian.repositories.PasswordRecoveryTokens
 import com.inRussian.tables.*
+import com.inRussian.tables.v2.BadgeRuleTable
+import com.inRussian.tables.v2.UserBadgeTable
+import com.inRussian.tables.v2.UserCourseProgressTable
+import com.inRussian.tables.v2.UserDailySolveTable
+import com.inRussian.tables.v2.UserSectionProgressTable
+import com.inRussian.tables.v2.UserSectionQueueItemTable
+import com.inRussian.tables.v2.UserSectionQueueStateTable
+import com.inRussian.tables.v2.UserTaskAttemptTable
+import com.inRussian.tables.v2.UserTaskStateTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
@@ -29,10 +38,37 @@ fun Application.configureDatabase() {
     Database.connect(dataSource)
     transaction {
         SchemaUtils.create(
-            Badges, Courses, CourseStatistics, MediaFiles, Sections, StaffProfiles, Users, PasswordRecoveryTokens,
-            TaskAnswerOptions, TaskAnswers, Tasks, Themes, TaskContent, UserBadges, UserCourseEnrollments,
-            UserCourseStatistics, UserLanguageSkills, UserProfiles, UserStatistics, UserTaskProgress, UserTaskQueue,
-            TaskEntity, TaskTypes, TaskToTypes,
+            BadgeRuleTable,
+            UserBadgeTable,
+            UserDailySolveTable,
+            UserCourseProgressTable,
+            UserSectionProgressTable,
+            UserTaskAttemptTable,
+            UserSectionQueueStateTable,
+            UserSectionQueueItemTable,
+            UserTaskStateTable,
+            Courses,
+            CourseStatistics,
+            MediaFiles,
+            Sections,
+            StaffProfiles,
+            Users,
+            PasswordRecoveryTokens,
+            TaskAnswerOptions,
+            TaskAnswers,
+            Tasks,
+            Themes,
+            TaskContent,
+            UserBadges,
+            UserCourseEnrollments,
+            UserCourseStatistics,
+            UserLanguageSkills,
+            UserProfiles,
+            UserStatistics,
+            UserTaskProgress,
+            TaskEntity,
+            TaskTypes,
+            TaskToTypes,
         )
     }
     try {

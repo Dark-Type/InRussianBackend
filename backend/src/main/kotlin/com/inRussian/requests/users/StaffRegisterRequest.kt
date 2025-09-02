@@ -15,8 +15,11 @@ data class StaffRegisterRequest(
     @field:Pattern(regexp = ".*\\d.*", message = "{password.digit}")
     @field:Pattern(regexp = ".*[!@#$%^&*()_].*", message = "{password.special}")
     val password: String,
-    @field:Pattern("^\\+[1-9][0-9]{7,14}$", message = "{phone.invalid}")
+    @field:Pattern(
+        regexp = "^\\+\\d{1,3}[-\\s]?\\d{1,14}([-\\s]?\\d{1,13})?$",
+        message = "{phone.invalid}"
+    )
     val phone: String? = null,
-    val role: UserRole, // EXPERT or CONTENT_MODERATOR
-    val systemLanguage: SystemLanguage = SystemLanguage.ENGLISH
+    val role: UserRole,
+    val systemLanguage: SystemLanguage = SystemLanguage.RUSSIAN
 )
