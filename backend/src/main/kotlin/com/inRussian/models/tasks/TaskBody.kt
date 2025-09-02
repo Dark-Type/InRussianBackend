@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed interface TaskBody {
     @Serializable
+    @SerialName("TextConnectTask")
     data class TextConnectTask(
         val variant: List<Pair<String, String>>
     ) : TaskBody
@@ -21,7 +22,7 @@ sealed interface TaskBody {
 
     @SerialName("TextInputTask")
     @Serializable
-    data class TextInputTask(val task: TextInputModel) : TaskBody
+    data class TextInputTask(val task: List<TextInputModel>) : TaskBody
 
     @SerialName("TextInputWithVariantTask")
     @Serializable
@@ -40,6 +41,7 @@ sealed interface TaskBody {
 
 @Serializable
 data class TextInputModel(
+    val label: String,
     val text: String,
     val gaps: List<Gap>
 )
