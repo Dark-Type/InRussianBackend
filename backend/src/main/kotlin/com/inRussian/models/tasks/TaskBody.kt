@@ -14,7 +14,7 @@ sealed interface TaskBody {
 
     @SerialName("AudioTask")
     @Serializable
-    data class AudioConnectTask(val variant: List<Pair<String, String>>) : TaskBody
+    data class AudioConnectTask( val variant: List<Pair<String, String>>) : TaskBody
 
     @SerialName("ImageTask")
     @Serializable
