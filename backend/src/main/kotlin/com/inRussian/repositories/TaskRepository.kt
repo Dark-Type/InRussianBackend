@@ -1,4 +1,5 @@
 package com.inRussian.repositories
+
 import com.inRussian.models.tasks.TaskBody
 import com.inRussian.models.tasks.TaskModel
 import com.inRussian.models.tasks.TaskType
@@ -46,6 +47,7 @@ class TaskRepository {
             return Base64.decode(decoder.decodeString())
         }
     }
+
     fun updateTask(taskId: UUID, request: UpdateTaskModelRequest): TaskModel? = transaction {
         val updated = TaskEntity.update({ TaskEntity.id eq taskId }) { st ->
             request.themeId?.let { st[TaskEntity.themeId] = UUID.fromString(it) }
@@ -157,6 +159,8 @@ class TaskRepository {
                     subclass(TaskBody.TextConnectTask::class)
                     subclass(TaskBody.TextInputTask::class)
                     subclass(TaskBody.TextInputWithVariantTask::class)
+                    subclass(TaskBody.ImageConnectTask::class)
+                    subclass(TaskBody.ListenAndSelect::class)
                     subclass(TaskBody.ImageConnectTask::class)
                 }
                 contextual(ByteArray::class) {

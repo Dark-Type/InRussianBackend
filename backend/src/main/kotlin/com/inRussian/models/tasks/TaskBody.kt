@@ -32,6 +32,9 @@ sealed interface TaskBody {
     @Serializable
     data class ListenAndSelect(val task: ListenAndSelectModel) : TaskBody
 
+    @SerialName("ImageAndSelect")
+    @Serializable
+    data class ImageAndSelect(val task: ImageAndSelectModel) : TaskBody
 
 }
 
