@@ -17,6 +17,7 @@ fun Application.configureSerialization() {
             subclass(TaskBody.TextInputTask::class)
             subclass(TaskBody.TextInputWithVariantTask::class)
             subclass(TaskBody.ImageTask::class)
+            subclass(TaskBody.ListenAndSelect::class)
         }
     }
     install(ContentNegotiation) {

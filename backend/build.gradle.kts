@@ -21,6 +21,11 @@ application {
 repositories {
     mavenCentral()
 }
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
 
 dependencies {
     implementation("org.hibernate.validator:hibernate-validator:8.0.0.Final")
