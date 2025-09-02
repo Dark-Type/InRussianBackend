@@ -119,6 +119,20 @@ fun Route.badgeRoutes(
             val badges = badgesQueryService.listUserBadges(userId.let(UUID::fromString))
             call.respond(badges)
         }
+
+        get("/badges/{badgeId}") {
+            val badgeId = call.parameters["badgeId"].let(UUID::fromString)
+            if (badgeId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid badgeId")
+                return@get
+            }
+            val rules = badgesQueryService.getBadgeRules(badgeId)
+            if (rules.isEmpty()) {
+                call.respond(HttpStatusCode.NotFound, "Badge rules not found")
+            } else {
+                call.respond(rules)
+            }
+        }
     }
 }
 

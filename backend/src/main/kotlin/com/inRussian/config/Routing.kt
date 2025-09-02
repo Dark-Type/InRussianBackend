@@ -85,7 +85,7 @@ fun Application.configureRouting() {
     val badgeRepo = BadgeRepository()
     val completionRepo = SectionCompletionRepository()
     val statsRepo = StatsRepository()
-    val badgesQueryService = BadgesQueryService(badgeRepo)
+    val badgesQueryService = BadgesQueryService()
 
 
     // Services

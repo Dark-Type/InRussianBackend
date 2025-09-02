@@ -15,7 +15,7 @@ object BadgeRuleTable : UUIDTable("badge_rule") {
     val type = enumerationByName("type", 64, SimpleBadgeRuleType::class)
     val sectionId = uuid("section_id").nullable().index()
     val courseId = uuid("course_id").nullable().index()
-    val streakDays = integer("streak_days").nullable() // for DAILY_STREAK
+    val streakDays = integer("streak_days").nullable()
     val active = bool("active").default(true)
 }
 
@@ -27,7 +27,6 @@ object UserBadgeTable : UUIDTable("user_badge") {
     val awardedAt = timestamp("awarded_at")
 
     init {
-        // Ensures single award per (user, badge, optional section, optional course)
         uniqueIndex("uq_user_badge_context", userId, badgeId, sectionId, courseId)
     }
 }

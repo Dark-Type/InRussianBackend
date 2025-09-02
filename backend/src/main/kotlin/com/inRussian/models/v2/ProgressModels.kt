@@ -93,3 +93,24 @@ data class CourseStatsDTO(
     val courseProgress: CourseProgressDTO?,
     val sections: List<SectionProgressDTO>
 )
+@Serializable
+data class BadgeRuleDTO(
+    @Contextual val badgeId: UUID,
+    val type: String,
+    @Contextual val sectionId: UUID? = null,
+    @Contextual val courseId: UUID? = null,
+    val streakDays: Int? = null,
+    val active: Boolean
+)
+
+
+@Serializable
+data class UserAwardedBadgeDTO(
+    @Contextual val id: UUID,
+    @Contextual val userId: UUID,
+    @Contextual val badgeId: UUID,
+    @Contextual val sectionId: UUID? = null,
+    @Contextual val courseId: UUID? = null,
+    @Contextual val awardedAt: Instant,
+    val rule: BadgeRuleDTO
+)
