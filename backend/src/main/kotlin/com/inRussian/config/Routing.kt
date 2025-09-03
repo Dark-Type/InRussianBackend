@@ -52,6 +52,7 @@ import com.inRussian.routes.v2.badgeRoutes
 import com.inRussian.routes.v2.courseRoutes
 import com.inRussian.routes.v2.sectionRoutes
 import com.inRussian.routes.v2.statsRoutes
+import com.inRussian.routes.v2.userAttemptRoutes
 import com.inRussian.services.MediaService
 import com.inRussian.services.mailer.GmailMailer
 import com.inRussian.services.mailer.Mailer
@@ -61,6 +62,7 @@ import com.inRussian.services.v2.ProgressService
 import com.inRussian.services.v2.QueueService
 import com.inRussian.services.v2.SolveService
 import com.inRussian.services.v2.StatsService
+import com.inRussian.services.v2.UserAttemptService
 
 
 fun Application.configureRouting() {
@@ -111,6 +113,9 @@ fun Application.configureRouting() {
     )
     val recoveryRepo: PasswordRecoveryTokenRepository = ExposedPasswordRecoveryTokenRepository()
 
+    val userAttemptService = UserAttemptService(
+        attemptRepo = attemptRepo
+    )
 
     val studentRepository: StudentRepository = ExposedStudentRepository()
     val studentService: StudentService = StudentServiceImpl(studentRepository)
@@ -130,6 +135,7 @@ fun Application.configureRouting() {
         attemptRoutes(solveService)
         badgeRoutes(badgesQueryService)
         statsRoutes(statsService)
+        userAttemptRoutes(userAttemptService)
     }
 
 }

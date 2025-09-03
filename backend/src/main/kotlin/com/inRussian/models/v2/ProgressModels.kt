@@ -1,6 +1,7 @@
 package com.inRussian.models.v2
 
 
+import com.inRussian.models.tasks.TaskBody
 import kotlinx.serialization.KSerializer
 import java.time.Instant
 import java.util.UUID
@@ -143,6 +144,16 @@ data class UserAwardedBadgeDTO(
     @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null,
     @Serializable(with = InstantSerializer::class) val awardedAt: Instant,
     val rule: BadgeRuleDTO
+)
+@Serializable
+data class UserAttemptDTO(
+    @Serializable(with = UUIDSerializer::class) val attemptId: UUID,
+    @Serializable(with = UUIDSerializer::class) val taskId: UUID,
+    val taskQuestion: String,
+    val taskBody: TaskBody,
+    val attemptsCount: Int,
+    val timeSpentMs: Long,
+    @Serializable(with = InstantSerializer::class) val createdAt: Instant
 )
 object UUIDSerializer : KSerializer<UUID> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)

@@ -7,6 +7,8 @@ import com.inRussian.tables.v2.UserTaskAttemptTable
 import kotlinx.coroutines.Dispatchers
 
 import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.insertIgnore
 
 import java.time.Instant
@@ -15,9 +17,7 @@ import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.ZoneId
 import java.time.ZoneOffset
-import kotlin.compareTo
-import kotlin.text.get
-import kotlin.text.set
+
 
 
 class AttemptRepository {
@@ -47,6 +47,18 @@ class AttemptRepository {
             .firstOrNull()
             ?.let(::toRecord)
     }
+
+    suspend fun getUserAttemptsBySection(userId: UUID, sectionId: UUID): List<AttemptRecord> =
+        newSuspendedTransaction(Dispatchers.IO) {
+            UserTaskAttemptTable
+                .selectAll()
+                .where {
+                    (UserTaskAttemptTable.userId eq userId) and
+                            (UserTaskAttemptTable.sectionId eq sectionId)
+                }
+                .orderBy(UserTaskAttemptTable.createdAt, SortOrder.DESC)
+                .map(::toRecord)
+        }
 
     private fun toRecord(row: ResultRow): AttemptRecord =
         AttemptRecord(

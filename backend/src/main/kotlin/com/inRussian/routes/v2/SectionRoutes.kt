@@ -6,6 +6,7 @@ import com.inRussian.services.v2.ProgressService
 import com.inRussian.services.v2.QueueService
 import com.inRussian.services.v2.SolveService
 import com.inRussian.services.v2.StatsService
+import com.inRussian.services.v2.UserAttemptService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
@@ -155,6 +156,28 @@ fun Route.statsRoutes(
         get("/platform/stats") {
             val stats = statsService.platformStats()
             call.respond(stats)
+        }
+    }
+}
+fun Route.userAttemptRoutes(
+    userAttemptService: UserAttemptService
+) {
+    authenticate("auth-jwt") {
+        get("/sections/{sectionId}/my-attempts") {
+            val principal = call.principal<JWTPrincipal>()!!
+            val userId = principal.payload.getClaim("userId").asString()
+            val sectionId = call.parameters["sectionId"]?.let(UUID::fromString)
+
+            if (sectionId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid sectionId")
+                return@get
+            }
+
+            val attempts = userAttemptService.getUserSectionAttempts(
+                UUID.fromString(userId),
+                sectionId
+            )
+            call.respond(attempts)
         }
     }
 }
