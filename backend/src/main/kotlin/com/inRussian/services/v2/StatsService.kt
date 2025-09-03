@@ -1,7 +1,9 @@
 package com.inRussian.services.v2
 
+import com.inRussian.models.v2.CourseAverageStatsDTO
 import com.inRussian.models.v2.CourseProgressDTO
 import com.inRussian.models.v2.CourseStatsDTO
+import com.inRussian.models.v2.PlatformStatsDTO
 import com.inRussian.models.v2.SectionProgressDTO
 import com.inRussian.models.v2.UserStatsDTO
 import com.inRussian.repositories.v2.ProgressRepository
@@ -11,6 +13,7 @@ import com.inRussian.tables.v2.UserSectionProgressTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
 
@@ -43,6 +46,33 @@ class StatsService(
             UserStatsDTO(
                 userId = userId,
                 courses = courseStats
+            )
+        }
+
+    suspend fun courseAverageStats(courseId: UUID): CourseAverageStatsDTO =
+        newSuspendedTransaction(Dispatchers.IO) {
+            val courseAvg = statsRepo.getCourseAverageProgress(courseId)
+            val sectionsAvg = statsRepo.getSectionAverageProgressByCourse(courseId)
+            CourseAverageStatsDTO(
+                courseId = courseId,
+                courseAverage = courseAvg,
+                sectionsAverage = sectionsAvg
+            )
+        }
+
+    suspend fun platformStats(): PlatformStatsDTO =
+        newSuspendedTransaction(Dispatchers.IO) {
+            val totalCourses = statsRepo.countTotalCourses()
+            val totalUsers = statsRepo.countTotalUsersWithProgress()
+            val courseLevelAvg = statsRepo.getPlatformCourseAverages()
+            val sectionLevelAvg = statsRepo.getPlatformSectionAverages()
+
+            PlatformStatsDTO(
+                totalCourses = totalCourses,
+                totalUsersWithProgress = totalUsers,
+                courseLevelAverage = courseLevelAvg,
+                sectionLevelAverage = sectionLevelAvg,
+                generatedAt = Instant.now()
             )
         }
 

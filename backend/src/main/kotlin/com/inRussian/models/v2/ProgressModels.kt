@@ -98,6 +98,40 @@ data class BadgeRuleDTO(
     val streakDays: Int? = null,
     val active: Boolean
 )
+@Serializable
+data class AverageProgressDTO(
+    val solvedTasksAvg: Double,
+    val totalTasksAvg: Double,
+    val percentAvg: Double,
+    val averageTimeMsAvg: Double,
+    val participants: Int,
+    @Serializable(with = InstantSerializer::class)val lastUpdatedAt: Instant?
+)
+@Serializable
+data class SectionAverageDTO(
+    @Serializable(with = UUIDSerializer::class) val sectionId: UUID,
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID,
+    val solvedTasksAvg: Double,
+    val totalTasksAvg: Double,
+    val percentAvg: Double,
+    val averageTimeMsAvg: Double,
+    val participants: Int,
+    @Serializable(with = InstantSerializer::class)val lastUpdatedAt: Instant?
+)
+@Serializable
+data class CourseAverageStatsDTO(
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID,
+    val courseAverage: AverageProgressDTO?,
+    val sectionsAverage: List<SectionAverageDTO>
+)
+@Serializable
+data class PlatformStatsDTO(
+    val totalCourses: Int,
+    val totalUsersWithProgress: Int,
+    val courseLevelAverage: AverageProgressDTO?,
+    val sectionLevelAverage: AverageProgressDTO?,
+    @Serializable(with = InstantSerializer::class) val generatedAt: Instant
+)
 
 
 @Serializable

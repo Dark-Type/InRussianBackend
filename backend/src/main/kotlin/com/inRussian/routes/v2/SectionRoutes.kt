@@ -141,5 +141,20 @@ fun Route.statsRoutes(
             val stats = statsService.userStats(userId)
             call.respond(stats)
         }
+
+        get("/course/{courseId}/stats") {
+            val courseId = call.parameters["courseId"]?.let(UUID::fromString)
+            if (courseId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid courseId")
+                return@get
+            }
+            val stats = statsService.courseAverageStats(courseId)
+            call.respond(stats)
+        }
+
+        get("/platform/stats") {
+            val stats = statsService.platformStats()
+            call.respond(stats)
+        }
     }
 }

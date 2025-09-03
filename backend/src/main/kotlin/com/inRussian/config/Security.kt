@@ -4,6 +4,7 @@ package com.inRussian.config
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.inRussian.models.users.UserRole
+import com.inRussian.models.users.UserStatus
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -130,6 +131,7 @@ object JWTConfig {
         userId: String,
         email: String,
         role: UserRole,
+        status: UserStatus,
         secret: String,
         audience: String,
         issuer: String,
@@ -138,6 +140,7 @@ object JWTConfig {
         println("=== GENERATING ACCESS TOKEN ===")
         println("UserId: $userId")
         println("Role: ${role.name}")
+        println("Status: ${status.name}")
         println("Secret: ${secret.take(10)}...")
         println("Audience: $audience")
         println("Issuer: $issuer")
@@ -148,6 +151,7 @@ object JWTConfig {
             .withClaim("userId", userId)
             .withClaim("email", email)
             .withClaim("role", role.name)
+            .withClaim("status", status.name)
             .withExpiresAt(Date(System.currentTimeMillis() + expiresInMinutes * 60000))
             .withIssuedAt(Date())
             .sign(Algorithm.HMAC256(secret))
@@ -177,3 +181,4 @@ object JWTConfig {
 fun JWTPrincipal.getUserId(): String? = payload.getClaim("userId").asString()
 fun JWTPrincipal.getUserRole(): UserRole? = payload.getClaim("role").asString()?.let { UserRole.valueOf(it) }
 fun JWTPrincipal.getUserEmail(): String? = payload.getClaim("email").asString()
+fun JWTPrincipal.getUserStatus(): UserStatus? = payload.getClaim("status").asString()?.let { UserStatus.valueOf(it) }

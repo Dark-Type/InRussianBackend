@@ -14,7 +14,7 @@ data class StudentRegisterRequest(
     @field:Pattern(regexp = ".*[!@#$%^&*()_].*", message = "{password.special}")
     val password: String,
     @field:Pattern(
-        regexp = "^\\+\\d{1,3}[-\\s]?\\d{1,14}([-\\s]?\\d{1,13})?$",
+        regexp = "^\\+?(\\d{1,4})?[\\s\\-.]?(?:\\(?\\d{1,4}\\)?[\\s\\-.]?)?\\d{1,4}([\\s\\-.]?\\d{2,4}){1,4}$",
         message = "{phone.invalid}"
     )
     val phone: String? = null,

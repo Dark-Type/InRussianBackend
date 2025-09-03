@@ -1,9 +1,7 @@
 package com.inRussian.services.v2
 
-import com.inRussian.models.v2.BadgeDTO
 import com.inRussian.models.v2.BadgeRuleDTO
 import com.inRussian.models.v2.UserAwardedBadgeDTO
-import com.inRussian.repositories.v2.BadgeRepository
 import com.inRussian.tables.v2.BadgeRuleTable
 import com.inRussian.tables.v2.UserBadgeTable
 import kotlinx.coroutines.Dispatchers

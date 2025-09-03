@@ -71,11 +71,12 @@ class AuthService(
         return createToken(createdUser)
     }
 
-    suspend fun createToken(user: User): Result<LoginResponse> {
+    fun createToken(user: User): Result<LoginResponse> {
         val accessToken = JWTConfig.generateAccessToken(
             userId = user.id,
             email = user.email,
             role = user.role,
+            status = user.status,
             secret = jwtSecret,
             audience = jwtAudience,
             issuer = jwtDomain
@@ -124,6 +125,7 @@ class AuthService(
                 userId = user.id,
                 email = user.email,
                 role = user.role,
+                status = user.status,
                 secret = jwtSecret,
                 audience = jwtAudience,
                 issuer = jwtDomain
