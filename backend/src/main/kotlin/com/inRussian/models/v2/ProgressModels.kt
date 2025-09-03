@@ -31,7 +31,6 @@ data class AttemptRecord(
 data class SectionProgressDTO(
     @Contextual val userId: UUID,
     @Contextual val sectionId: UUID,
-    @Contextual val courseId: UUID,
     val solvedTasks: Int,
     val totalTasks: Int,
     val percent: Double,

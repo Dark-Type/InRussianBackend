@@ -47,12 +47,8 @@ fun Route.sectionRoutes(
                 call.respond(HttpStatusCode.BadRequest, "Invalid sectionId")
                 return@get
             }
-            val progress = progressService.sectionProgress(userId.let(UUID::fromString), sectionId)
-            if (progress == null) {
-                call.respond(HttpStatusCode.NoContent)
-            } else {
-                call.respond(progress)
-            }
+            val progress = progressService.sectionProgress(UUID.fromString(userId), sectionId)
+            call.respond(progress)
         }
     }
 }
@@ -69,12 +65,8 @@ fun Route.courseRoutes(
                 call.respond(HttpStatusCode.BadRequest, "Invalid courseId")
                 return@get
             }
-            val progress = progressService.courseProgress(userId.let(UUID::fromString), courseId)
-            if (progress == null) {
-                call.respond(HttpStatusCode.NoContent)
-            } else {
-                call.respond(progress)
-            }
+            val progress = progressService.courseProgress(UUID.fromString(userId), courseId)
+            call.respond(progress)
         }
     }
 }

@@ -25,8 +25,9 @@ import kotlinx.io.readByteArray
 import java.util.UUID
 
 fun Route.mediaRoutes(mediaService: MediaService) {
-    authenticate("auth-jwt") {
-        route("/media") {
+
+    route("/media") {
+        authenticate("auth-jwt") {
             post("/upload") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val tokenUserId = principal.getUserId()?.let(UUID::fromString)
@@ -35,7 +36,8 @@ fun Route.mediaRoutes(mediaService: MediaService) {
                     ?: return@post call.respond(HttpStatusCode.Unauthorized, "Invalid token")
 
                 val paramUserId = call.request.queryParameters["userId"]?.let(UUID::fromString)
-                val targetUserId = if (userRole == UserRole.ADMIN && paramUserId != null) paramUserId else tokenUserId
+                val targetUserId =
+                    if (userRole == UserRole.ADMIN && paramUserId != null) paramUserId else tokenUserId
 
                 val multipart = call.receiveMultipart()
                 var fileName: String? = null
@@ -52,9 +54,11 @@ fun Route.mediaRoutes(mediaService: MediaService) {
                                 "fileType" -> fileType = FileType.valueOf(part.value)
                             }
                         }
+
                         is PartData.FileItem -> {
                             fileBytes = part.provider().readRemaining().readByteArray()
                         }
+
                         else -> {}
                     }
                 }
@@ -77,20 +81,6 @@ fun Route.mediaRoutes(mediaService: MediaService) {
                     onFailure = { call.respond(HttpStatusCode.BadRequest, it.message ?: "Upload failed") }
                 )
             }
-
-            get("/{mediaId}") {
-                val mediaId = call.parameters["mediaId"]?.let(UUID::fromString)
-                    ?: return@get call.respond(HttpStatusCode.BadRequest, "mediaId required")
-
-                val pair = mediaService.getMediaFile(mediaId)
-                if (pair != null) {
-                    val (meta, file) = pair
-                    call.respondFile(file)
-                } else {
-                    call.respond(HttpStatusCode.NotFound, "File not found or access denied")
-                }
-            }
-
             put("/{mediaId}") {
                 val principal = call.principal<JWTPrincipal>()!!
                 val tokenUserId = principal.getUserId()?.let(UUID::fromString)
@@ -118,9 +108,11 @@ fun Route.mediaRoutes(mediaService: MediaService) {
                                 "fileType" -> fileType = FileType.valueOf(part.value)
                             }
                         }
+
                         is PartData.FileItem -> {
                             fileBytes = part.provider().readRemaining().readByteArray()
                         }
+
                         else -> {}
                     }
                 }
@@ -163,6 +155,18 @@ fun Route.mediaRoutes(mediaService: MediaService) {
                 } else {
                     call.respond(HttpStatusCode.NotFound, "File not found or access denied")
                 }
+            }
+        }
+        get("/{mediaId}") {
+            val mediaId = call.parameters["mediaId"]?.let(UUID::fromString)
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "mediaId required")
+
+            val pair = mediaService.getMediaFile(mediaId)
+            if (pair != null) {
+                val (meta, file) = pair
+                call.respondFile(file)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "File not found or access denied")
             }
         }
     }

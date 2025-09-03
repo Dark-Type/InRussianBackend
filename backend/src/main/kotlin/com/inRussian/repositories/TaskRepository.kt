@@ -161,7 +161,6 @@ class TaskRepository {
                     subclass(TaskBody.TextInputWithVariantTask::class)
                     subclass(TaskBody.ImageConnectTask::class)
                     subclass(TaskBody.ListenAndSelect::class)
-                    subclass(TaskBody.ImageConnectTask::class)
                     subclass(TaskBody.ImageAndSelect::class)
                     subclass(TaskBody.ConstructSentenceTask::class)
                     subclass(TaskBody.SelectWordsTask::class)

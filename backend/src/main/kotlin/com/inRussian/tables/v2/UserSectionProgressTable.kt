@@ -12,7 +12,7 @@ object UserSectionProgressTable : Table("user_section_progress") {
     val totalTasks = integer("total_tasks").default(0)
     val percentComplete = double("percent_complete").default(0.0)
 
-    val totalTimeMs = long("total_time_ms").default(0L) // sum of first-try times
+    val totalTimeMs = long("total_time_ms").default(0L)
     val averageTimeMs = integer("average_time_ms").default(0)
     val updatedAt = timestamp("updated_at")
 
