@@ -1,10 +1,15 @@
 package com.inRussian.models.v2
 
 
-import kotlinx.serialization.Contextual
+import kotlinx.serialization.KSerializer
 import java.time.Instant
 import java.util.UUID
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 
 
 data class AttemptInsert(
@@ -29,31 +34,31 @@ data class AttemptRecord(
 )
 @Serializable
 data class SectionProgressDTO(
-    @Contextual val userId: UUID,
-    @Contextual val sectionId: UUID,
+    @Serializable(with = UUIDSerializer::class) val userId: UUID,
+    @Serializable(with = UUIDSerializer::class) val sectionId: UUID,
     val solvedTasks: Int,
     val totalTasks: Int,
     val percent: Double,
     val averageTimeMs: Int,
-    @Contextual val updatedAt: Instant
+    @Serializable(with = InstantSerializer::class) val updatedAt: Instant
 )
 
 @Serializable
 data class CourseProgressDTO(
-    @Contextual val userId: UUID,
-    @Contextual val courseId: UUID,
+    @Serializable(with = UUIDSerializer::class) val userId: UUID,
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID,
     val solvedTasks: Int,
     val totalTasks: Int,
     val percent: Double,
     val averageTimeMs: Int,
-    @Contextual val updatedAt: Instant
+    @Serializable(with = InstantSerializer::class) val updatedAt: Instant
 )
 
 @Serializable
 data class AwardedBadgeDTO(
-    @Contextual val badgeId: UUID,
-    @Contextual val sectionId: UUID? = null,
-    @Contextual val courseId: UUID? = null
+    @Serializable(with = UUIDSerializer::class) val badgeId: UUID,
+    @Serializable(with = UUIDSerializer::class) val sectionId: UUID? = null,
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null
 )
 
 @Serializable
@@ -68,36 +73,28 @@ data class SolveResult(
 
 @Serializable
 data class NextTaskResult(
-    @Contextual val taskId: UUID,
-    @Contextual val sectionId: UUID,
-    @Contextual val themeId: UUID
-)
-@Serializable
-data class BadgeDTO(
-    @Contextual val id: UUID,
-    @Contextual val badgeId: UUID,
-    @Contextual val sectionId: UUID? = null,
-    @Contextual val courseId: UUID? = null,
-    @Contextual val awardedAt: Instant
+    @Serializable(with = UUIDSerializer::class) val taskId: UUID,
+    @Serializable(with = UUIDSerializer::class) val sectionId: UUID,
+    @Serializable(with = UUIDSerializer::class) val themeId: UUID
 )
 @Serializable
 data class UserStatsDTO(
-    @Contextual val userId: UUID,
+    @Serializable(with = UUIDSerializer::class) val userId: UUID,
     val courses: List<CourseStatsDTO>
 )
 
 @Serializable
 data class CourseStatsDTO(
-    @Contextual val courseId: UUID,
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID,
     val courseProgress: CourseProgressDTO?,
     val sections: List<SectionProgressDTO>
 )
 @Serializable
 data class BadgeRuleDTO(
-    @Contextual val badgeId: UUID,
+    @Serializable(with = UUIDSerializer::class) val badgeId: UUID,
     val type: String,
-    @Contextual val sectionId: UUID? = null,
-    @Contextual val courseId: UUID? = null,
+    @Serializable(with = UUIDSerializer::class) val sectionId: UUID? = null,
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null,
     val streakDays: Int? = null,
     val active: Boolean
 )
@@ -105,11 +102,22 @@ data class BadgeRuleDTO(
 
 @Serializable
 data class UserAwardedBadgeDTO(
-    @Contextual val id: UUID,
-    @Contextual val userId: UUID,
-    @Contextual val badgeId: UUID,
-    @Contextual val sectionId: UUID? = null,
-    @Contextual val courseId: UUID? = null,
-    @Contextual val awardedAt: Instant,
+    @Serializable(with = UUIDSerializer::class) val id: UUID,
+    @Serializable(with = UUIDSerializer::class) val userId: UUID,
+    @Serializable(with = UUIDSerializer::class) val badgeId: UUID,
+    @Serializable(with = UUIDSerializer::class) val sectionId: UUID? = null,
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null,
+    @Serializable(with = InstantSerializer::class) val awardedAt: Instant,
     val rule: BadgeRuleDTO
 )
+object UUIDSerializer : KSerializer<UUID> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: UUID) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): UUID = UUID.fromString(decoder.decodeString())
+}
+
+object InstantSerializer : KSerializer<Instant> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Instant", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: Instant) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): Instant = Instant.parse(decoder.decodeString())
+}

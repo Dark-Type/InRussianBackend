@@ -50,7 +50,6 @@ class StatsService(
         SectionProgressDTO(
             userId = row[UserSectionProgressTable.userId],
             sectionId = row[UserSectionProgressTable.sectionId],
-            courseId = row[UserSectionProgressTable.courseId],
             solvedTasks = row[UserSectionProgressTable.solvedTasks],
             totalTasks = row[UserSectionProgressTable.totalTasks],
             percent = row[UserSectionProgressTable.percentComplete],
