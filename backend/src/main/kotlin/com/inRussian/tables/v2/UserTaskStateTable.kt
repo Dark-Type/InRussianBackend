@@ -10,7 +10,6 @@ object UserTaskStateTable : Table("user_task_state") {
     val taskId = uuid("task_id")
 
     val themeId = uuid("theme_id").index()
-    val sectionId = uuid("section_id").index()
     val courseId = uuid("course_id").index()
 
     val isSolvedFirstTry = bool("is_solved_first_try").default(false)
@@ -19,7 +18,6 @@ object UserTaskStateTable : Table("user_task_state") {
     override val primaryKey = PrimaryKey(userId, taskId, name = "pk_user_task_state")
 
     init {
-        index(false, userId, sectionId)
         index(false, userId, courseId)
     }
 }

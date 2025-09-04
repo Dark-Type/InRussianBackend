@@ -4,12 +4,11 @@ import com.inRussian.models.v2.CourseAverageStatsDTO
 import com.inRussian.models.v2.CourseProgressDTO
 import com.inRussian.models.v2.CourseStatsDTO
 import com.inRussian.models.v2.PlatformStatsDTO
-import com.inRussian.models.v2.SectionProgressDTO
+import com.inRussian.models.v2.ThemeProgressDTO
 import com.inRussian.models.v2.UserStatsDTO
-import com.inRussian.repositories.v2.ProgressRepository
 import com.inRussian.repositories.v2.StatsRepository
 import com.inRussian.tables.v2.UserCourseProgressTable
-import com.inRussian.tables.v2.UserSectionProgressTable
+import com.inRussian.tables.v2.UserThemeProgressTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -19,7 +18,6 @@ import java.util.UUID
 
 class StatsService(
     private val statsRepo: StatsRepository,
-    private val progressRepo: ProgressRepository
 ) {
 
     suspend fun userStats(userId: UUID): UserStatsDTO =
@@ -27,19 +25,19 @@ class StatsService(
             val courseIds = statsRepo.listEnrolledCourseIds(userId)
 
             val courseProgressRows = statsRepo.listCourseProgressForUser(userId, courseIds)
-            val sectionProgressRows = statsRepo.listSectionProgressForUser(userId, courseIds)
+            val themeProgressRows = statsRepo.listThemeProgressForUser(userId, courseIds)
 
             val courseProgressById = courseProgressRows.associateBy { it[UserCourseProgressTable.courseId] }
-            val sectionsByCourse = sectionProgressRows.groupBy { it[UserSectionProgressTable.courseId] }
+            val themesByCourse = themeProgressRows.groupBy { it[UserThemeProgressTable.courseId] }
 
             val courseStats = courseIds.map { cid ->
                 val cpRow = courseProgressById[cid]
                 val cpDto = cpRow?.let(::toCourseDTO)
-                val secDtos = (sectionsByCourse[cid] ?: emptyList()).map(::toSectionDTO)
+                val themeDtos = (themesByCourse[cid] ?: emptyList()).map(::toThemeDTO)
                 CourseStatsDTO(
                     courseId = cid,
                     courseProgress = cpDto,
-                    sections = secDtos
+                    themes = themeDtos
                 )
             }
 
@@ -52,11 +50,11 @@ class StatsService(
     suspend fun courseAverageStats(courseId: UUID): CourseAverageStatsDTO =
         newSuspendedTransaction(Dispatchers.IO) {
             val courseAvg = statsRepo.getCourseAverageProgress(courseId)
-            val sectionsAvg = statsRepo.getSectionAverageProgressByCourse(courseId)
+            val themesAvg = statsRepo.getThemeAverageProgressByCourse(courseId)
             CourseAverageStatsDTO(
                 courseId = courseId,
                 courseAverage = courseAvg,
-                sectionsAverage = sectionsAvg
+                themesAverage = themesAvg
             )
         }
 
@@ -65,26 +63,26 @@ class StatsService(
             val totalCourses = statsRepo.countTotalCourses()
             val totalUsers = statsRepo.countTotalUsersWithProgress()
             val courseLevelAvg = statsRepo.getPlatformCourseAverages()
-            val sectionLevelAvg = statsRepo.getPlatformSectionAverages()
+            val themeLevelAvg = statsRepo.getPlatformThemeAverages()
 
             PlatformStatsDTO(
                 totalCourses = totalCourses,
                 totalUsersWithProgress = totalUsers,
                 courseLevelAverage = courseLevelAvg,
-                sectionLevelAverage = sectionLevelAvg,
-                generatedAt = Instant.now()
+                themeLevelAverage = themeLevelAvg,
+                generatedAt = Instant.now(),
             )
         }
 
-    private fun toSectionDTO(row: ResultRow): SectionProgressDTO =
-        SectionProgressDTO(
-            userId = row[UserSectionProgressTable.userId],
-            sectionId = row[UserSectionProgressTable.sectionId],
-            solvedTasks = row[UserSectionProgressTable.solvedTasks],
-            totalTasks = row[UserSectionProgressTable.totalTasks],
-            percent = row[UserSectionProgressTable.percentComplete],
-            averageTimeMs = row[UserSectionProgressTable.averageTimeMs],
-            updatedAt = row[UserSectionProgressTable.updatedAt].atOffset(ZoneOffset.UTC).toInstant()
+    private fun toThemeDTO(row: ResultRow): ThemeProgressDTO =
+        ThemeProgressDTO(
+            userId = row[UserThemeProgressTable.userId],
+            themeId = row[UserThemeProgressTable.themeId],
+            solvedTasks = row[UserThemeProgressTable.solvedTasks],
+            totalTasks = row[UserThemeProgressTable.totalTasks],
+            percent = row[UserThemeProgressTable.percentComplete],
+            averageTimeMs = row[UserThemeProgressTable.averageTimeMs],
+            updatedAt = row[UserThemeProgressTable.updatedAt].atOffset(ZoneOffset.UTC).toInstant()
         )
 
     private fun toCourseDTO(row: ResultRow): CourseProgressDTO =

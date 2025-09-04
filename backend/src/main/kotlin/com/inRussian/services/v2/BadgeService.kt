@@ -6,19 +6,22 @@ import com.inRussian.tables.v2.BadgeRuleTable
 import com.inRussian.tables.v2.SimpleBadgeRuleType
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import java.time.Instant
 import java.util.UUID
+import kotlin.collections.filter
 
 class BadgeService(
     private val badgeRepo: BadgeRepository
 ) {
 
-    suspend fun handleSectionCompleted(userId: UUID, sectionId: UUID, courseId: UUID): List<AwardedBadgeDTO> =
+    // New: theme-completed handler (sections removed)
+    suspend fun handleThemeCompleted(userId: UUID, themeId: UUID, courseId: UUID): List<AwardedBadgeDTO> =
         newSuspendedTransaction(Dispatchers.IO) {
-            val rules = badgeRepo.listActiveRulesByType(SimpleBadgeRuleType.SECTION_COMPLETED)
-            val matched = rules.filter { r -> r[BadgeRuleTable.sectionId] == sectionId }
+            val rules = badgeRepo.listActiveRulesByType(SimpleBadgeRuleType.THEME_COMPLETED)
+            val matched = rules.filter { r -> r[BadgeRuleTable.themeId] == themeId }
             matched.mapNotNull { r ->
-                val ok = badgeRepo.awardIfAbsent(userId, r[BadgeRuleTable.badgeId], sectionId = sectionId, courseId = courseId)
-                if (ok) AwardedBadgeDTO(badgeId = r[BadgeRuleTable.badgeId], sectionId = sectionId, courseId = courseId) else null
+                val ok = badgeRepo.awardIfAbsent(userId, r[BadgeRuleTable.badgeId], courseId = courseId, themeId = themeId)
+                if (ok) AwardedBadgeDTO(badgeId = r[BadgeRuleTable.badgeId], themeId = themeId, courseId = courseId, awardedAt = Instant.now()) else null
             }
         }
 
@@ -28,7 +31,7 @@ class BadgeService(
             val matched = rules.filter { r -> r[BadgeRuleTable.courseId] == courseId }
             matched.mapNotNull { r ->
                 val ok = badgeRepo.awardIfAbsent(userId, r[BadgeRuleTable.badgeId], courseId = courseId)
-                if (ok) AwardedBadgeDTO(badgeId = r[BadgeRuleTable.badgeId], courseId = courseId) else null
+                if (ok) AwardedBadgeDTO(badgeId = r[BadgeRuleTable.badgeId], courseId = courseId, awardedAt = Instant.now()) else null
             }
         }
 
@@ -41,7 +44,7 @@ class BadgeService(
                 val need = r[BadgeRuleTable.streakDays] ?: return@mapNotNull null
                 if (streak >= need) {
                     val ok = badgeRepo.awardIfAbsent(userId, r[BadgeRuleTable.badgeId])
-                    if (ok) AwardedBadgeDTO(badgeId = r[BadgeRuleTable.badgeId]) else null
+                    if (ok) AwardedBadgeDTO(badgeId = r[BadgeRuleTable.badgeId], awardedAt = Instant.now()) else null
                 } else null
             }
         }

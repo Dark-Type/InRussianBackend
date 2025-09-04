@@ -9,10 +9,8 @@ import io.ktor.server.routing.*
 
 fun Route.contentRoutes(contentService: ContentService) {
 
-
     authenticate("auth-jwt") {
         route("/content") {
-
 
             route("/themes") {
 
@@ -30,47 +28,73 @@ fun Route.contentRoutes(contentService: ContentService) {
                     }
                 }
 
-                get("/by-section/{sectionId}") {
-                    val sectionId = call.parameters["sectionId"]
-                    if (sectionId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing section ID")
-                        return@get
-                    }
-                    val result = contentService.getThemesBySection(sectionId)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(HttpStatusCode.InternalServerError, "Failed to get themes")
-                    }
-                }
-            }
-            route("/sections") {
-
-                get("/{sectionId}") {
-                    val sectionId = call.parameters["sectionId"]
-                    if (sectionId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing section ID")
-                        return@get
-                    }
-                    val result = contentService.getSection(sectionId)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(HttpStatusCode.NotFound, "Section not found")
-                    }
-                }
-
                 get("/by-course/{courseId}") {
                     val courseId = call.parameters["courseId"]
                     if (courseId == null) {
                         call.respond(HttpStatusCode.BadRequest, "Missing course ID")
                         return@get
                     }
-                    val result = contentService.getSectionsByCourse(courseId)
+                    val result = contentService.getThemesByCourse(courseId)
                     if (result.isSuccess) {
                         call.respond(HttpStatusCode.OK, result.getOrNull()!!)
                     } else {
-                        call.respond(HttpStatusCode.InternalServerError, "Failed to get sections")
+                        call.respond(HttpStatusCode.InternalServerError, "Failed to get themes")
+                    }
+                }
+
+                get("/by-theme/{themeId}") {
+                    val themeId = call.parameters["themeId"]
+                    if (themeId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "Missing theme ID")
+                        return@get
+                    }
+                    val result = contentService.getThemesByTheme(themeId)
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+                    } else {
+                        call.respond(HttpStatusCode.InternalServerError, "Failed to get themes")
+                    }
+                }
+
+                get("/{themeId}/tasks") {
+                    val themeId = call.parameters["themeId"]
+                    if (themeId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "Missing theme ID")
+                        return@get
+                    }
+                    val result = contentService.getTasksByTheme(themeId)
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+                    } else {
+                        call.respond(HttpStatusCode.InternalServerError, "Failed to get tasks")
+                    }
+                }
+
+                get("/{themeId}/contents") {
+                    val themeId = call.parameters["themeId"]
+                    if (themeId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "Missing theme ID")
+                        return@get
+                    }
+                    val result = contentService.getThemeContents(themeId)
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+                    } else {
+                        call.respond(HttpStatusCode.NotFound, "Theme not found")
+                    }
+                }
+
+                get("/{themeId}/tree") {
+                    val themeId = call.parameters["themeId"]
+                    if (themeId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "Missing theme ID")
+                        return@get
+                    }
+                    val result = contentService.getThemeSubtree(themeId)
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+                    } else {
+                        call.respond(HttpStatusCode.NotFound, "Theme not found")
                     }
                 }
             }
@@ -90,6 +114,19 @@ fun Route.contentRoutes(contentService: ContentService) {
                     }
                 }
 
+                get("/{courseId}/theme-tree") {
+                    val courseId = call.parameters["courseId"]
+                    if (courseId == null) {
+                        call.respond(HttpStatusCode.BadRequest, "Missing course ID")
+                        return@get
+                    }
+                    val result = contentService.getCourseThemeTree(courseId)
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+                    } else {
+                        call.respond(HttpStatusCode.InternalServerError, "Failed to get theme tree")
+                    }
+                }
 
                 get {
                     val result = contentService.getAllCourses()
@@ -134,19 +171,7 @@ fun Route.contentRoutes(contentService: ContentService) {
                         call.respond(HttpStatusCode.InternalServerError, "Failed to get statistics")
                     }
                 }
-                get("/section/{sectionId}/tasks-count") {
-                    val sectionId = call.parameters["sectionId"]
-                    if (sectionId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing section ID")
-                        return@get
-                    }
-                    val result = contentService.getSectionTasksCount(sectionId)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, mapOf("count" to result.getOrNull()))
-                    } else {
-                        call.respond(HttpStatusCode.InternalServerError, "Failed to get tasks count")
-                    }
-                }
+
                 get("/theme/{themeId}/tasks-count") {
                     val themeId = call.parameters["themeId"]
                     if (themeId == null) {

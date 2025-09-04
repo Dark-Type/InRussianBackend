@@ -36,7 +36,6 @@ class BadgesQueryService {
             id = row[UserBadgeTable.id].value,
             userId = row[UserBadgeTable.userId],
             badgeId = row[UserBadgeTable.badgeId],
-            sectionId = row[UserBadgeTable.sectionId],
             courseId = row[UserBadgeTable.courseId],
             awardedAt = row[UserBadgeTable.awardedAt].atOffset(ZoneOffset.UTC).toInstant(),
             rule = rule
@@ -47,7 +46,6 @@ class BadgesQueryService {
         BadgeRuleDTO(
             badgeId = row[BadgeRuleTable.badgeId],
             type = row[BadgeRuleTable.type].name,
-            sectionId = row[BadgeRuleTable.sectionId],
             courseId = row[BadgeRuleTable.courseId],
             streakDays = row[BadgeRuleTable.streakDays],
             active = row[BadgeRuleTable.active]

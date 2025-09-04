@@ -14,14 +14,12 @@ class TaskStateRepository {
         userId: UUID,
         taskId: UUID,
         themeId: UUID,
-        sectionId: UUID,
         courseId: UUID
     ) = newSuspendedTransaction(Dispatchers.IO) {
         UserTaskStateTable.insertIgnore {
             it[UserTaskStateTable.userId] = userId
             it[UserTaskStateTable.taskId] = taskId
             it[UserTaskStateTable.themeId] = themeId
-            it[UserTaskStateTable.sectionId] = sectionId
             it[UserTaskStateTable.courseId] = courseId
         }
     }

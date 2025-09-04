@@ -3,14 +3,12 @@ package com.inRussian.services.v2
 import com.inRussian.models.v2.AttemptInsert
 import com.inRussian.models.v2.AwardedBadgeDTO
 import com.inRussian.models.v2.CourseProgressDTO
-import com.inRussian.models.v2.SectionProgressDTO
 import com.inRussian.models.v2.SolveResult
+import com.inRussian.models.v2.ThemeProgressDTO
 import com.inRussian.repositories.v2.AttemptRepository
 import com.inRussian.repositories.v2.ProgressRepository
 import com.inRussian.repositories.v2.QueueRepository
-import com.inRussian.repositories.v2.SectionCompletionRepository
 import com.inRussian.repositories.v2.TaskStateRepository
-import com.inRussian.tables.Sections
 import com.inRussian.tables.TaskEntity
 import com.inRussian.tables.Themes
 import kotlinx.coroutines.Dispatchers
@@ -25,8 +23,7 @@ class SolveService(
     private val stateRepo: TaskStateRepository,
     private val queueRepo: QueueRepository,
     private val progressRepo: ProgressRepository,
-    private val badgeService: BadgeService,
-    private val completionRepo: SectionCompletionRepository
+    private val badgeService: BadgeService
 ) {
     @Serializable
     data class SubmitParams(
@@ -45,18 +42,13 @@ class SolveService(
                 .firstOrNull()?.get(TaskEntity.themeId)?.value
                 ?: throw IllegalArgumentException("Task not found: ${params.taskId}")
 
-            val sectionId = Themes
+            val courseId = Themes
                 .selectAll().where { Themes.id eq themeId }
                 .limit(1)
-                .first()[Themes.sectionId].value
+                .first()[Themes.courseId].value
 
-            val courseId = Sections
-                .selectAll().where { Sections.id eq sectionId }
-                .limit(1)
-                .first()[Sections.courseId].value
-
-            queueRepo.ensureQueueState(params.userId, sectionId)
-            stateRepo.ensureStateRow(params.userId, params.taskId, themeId, sectionId, courseId)
+            queueRepo.ensureQueueState(params.userId, themeId)
+            stateRepo.ensureStateRow(params.userId, params.taskId, themeId, courseId)
 
             attemptRepo.insertAttemptIfNew(
                 AttemptInsert(
@@ -64,7 +56,6 @@ class SolveService(
                     userId = params.userId,
                     taskId = params.taskId,
                     themeId = themeId,
-                    sectionId = sectionId,
                     courseId = courseId,
                     attemptsCount = params.attemptsCount,
                     timeSpentMs = params.timeSpentMs,
@@ -74,53 +65,49 @@ class SolveService(
 
             var removed = false
             var moved = false
-            var sectionDTO: SectionProgressDTO? = null
+            var themeDTO: ThemeProgressDTO? = null
             var courseDTO: CourseProgressDTO? = null
             val newlyAwarded = mutableListOf<AwardedBadgeDTO>()
-            var sectionCompletedNow = false
+            var themeCompletedNow = false
 
             if (params.attemptsCount == 1) {
-                removed = queueRepo.removeFromQueue(params.userId, sectionId, params.taskId) > 0
+                removed = queueRepo.removeFromQueue(params.userId, themeId, params.taskId) > 0
 
                 val firstSolved = stateRepo.markSolvedFirstTryIfNot(params.userId, params.taskId)
                 if (firstSolved) {
-                    progressRepo.applyFirstTrySolveToSection(params.userId, sectionId, courseId, params.timeSpentMs)
+                    progressRepo.applyFirstTrySolveToTheme(params.userId, themeId, courseId, params.timeSpentMs)
                     progressRepo.applyFirstTrySolveToCourse(params.userId, courseId, params.timeSpentMs)
 
-                    sectionDTO = ProgressService(progressRepo).sectionProgress(params.userId, sectionId)
+                    themeDTO = ProgressService(progressRepo).themeProgress(params.userId, themeId)
                     courseDTO = ProgressService(progressRepo).courseProgress(params.userId, courseId)
 
                     newlyAwarded += badgeService.handleDailyStreak(params.userId)
 
-                    if (sectionDTO != null && sectionDTO.totalTasks > 0 && sectionDTO.percent >= 100.0) {
-                        newlyAwarded += badgeService.handleSectionCompleted(params.userId, sectionId, courseId)
+                    if (themeDTO.totalTasks > 0 && themeDTO.percent >= 100.0) {
+                        themeCompletedNow = true
+                        newlyAwarded += badgeService.handleThemeCompleted(params.userId, themeId, courseId)
                     }
-                    if (courseDTO != null && courseDTO.totalTasks > 0 && courseDTO.percent >= 100.0) {
+                    if (courseDTO.totalTasks > 0 && courseDTO.percent >= 100.0) {
                         newlyAwarded += badgeService.handleCourseCompleted(params.userId, courseId)
                     }
                 }
             } else {
-                moved = queueRepo.moveToEnd(params.userId, sectionId, params.taskId) > 0
+                // Wrong answer path: requeue at the end inside the same theme queue
+                moved = queueRepo.moveToEnd(params.userId, themeId, params.taskId) > 0
             }
 
-            val sizeAfter = queueRepo.getQueueSize(params.userId, sectionId)
-            if (sizeAfter == 1L) {
-                queueRepo.seedNextTheme(params.userId, sectionId)
-            } else if (sizeAfter == 0L) {
-                val added = queueRepo.seedNextTheme(params.userId, sectionId)
-                if (added == 0) {
-                    completionRepo.markCompletedFlag(params.userId, sectionId, completed = true)
-                    sectionCompletedNow = true
-                }
+            val sizeAfter = queueRepo.getQueueSize(params.userId, themeId)
+            if (sizeAfter == 1L || sizeAfter == 0L) {
+                queueRepo.seedThemeTasks(params.userId, themeId)
             }
 
             SolveResult(
                 removedFromQueue = removed,
                 movedToEnd = moved,
-                sectionProgress = sectionDTO,
+                themeProgress = themeDTO,
                 courseProgress = courseDTO,
                 newlyAwardedBadges = newlyAwarded,
-                sectionCompleted = sectionCompletedNow
+                themeCompleted = themeCompletedNow
             )
         }
 }

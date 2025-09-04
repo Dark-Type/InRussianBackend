@@ -64,53 +64,6 @@ fun Route.contentManagerRoutes(contentService: ContentService) {
                     }
                 }
             }
-            route("/sections") {
-                post {
-                    val request = call.receive<CreateSectionRequest>()
-                    val result = contentService.createSection(request)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.Created, result.getOrNull()!!)
-                    } else {
-                        call.respond(
-                            HttpStatusCode.BadRequest,
-                            ErrorResponse(
-                                success = false,
-                                error = result.exceptionOrNull()?.message ?: "Failed to create section",
-                                code = null,
-                                timestamp = System.currentTimeMillis()
-                            )
-                        )
-                    }
-                }
-                put("/{sectionId}") {
-                    val sectionId = call.parameters["sectionId"]
-                    if (sectionId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing section ID")
-                        return@put
-                    }
-                    val request = call.receive<UpdateSectionRequest>()
-                    val result = contentService.updateSection(sectionId, request)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
-                    } else {
-                        call.respond(HttpStatusCode.NotFound, "Section not found")
-                    }
-                }
-
-                delete("/{sectionId}") {
-                    val sectionId = call.parameters["sectionId"]
-                    if (sectionId == null) {
-                        call.respond(HttpStatusCode.BadRequest, "Missing section ID")
-                        return@delete
-                    }
-                    val result = contentService.deleteSection(sectionId)
-                    if (result.isSuccess) {
-                        call.respond(HttpStatusCode.OK, mapOf("message" to "Section deleted successfully"))
-                    } else {
-                        call.respond(HttpStatusCode.NotFound, "Section not found")
-                    }
-                }
-            }
 
             route("/courses") {
                 post {

@@ -6,7 +6,7 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 
 object Reports : UUIDTable("reports") {
     val description = varchar("description", 1000)
-    val taskId = reference("task_id", Tasks)
+    val taskId = reference("task_id", TaskEntity)
     val reporterId = reference("reporter_id", Users)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
 }

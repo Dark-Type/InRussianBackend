@@ -19,6 +19,7 @@ class UserAttemptService(
     private val attemptRepo: AttemptRepository
 ) {
 
+    // Use the same serializer configuration as TaskRepository
     private val jsonConfig = Json {
         serializersModule = SerializersModule {
             polymorphic(TaskBody::class) {
@@ -40,9 +41,9 @@ class UserAttemptService(
         ignoreUnknownKeys = true
     }
 
-    suspend fun getUserSectionAttempts(userId: UUID, sectionId: UUID): List<UserAttemptDTO> =
+    suspend fun getUserThemeAttempts(userId: UUID, themeId: UUID): List<UserAttemptDTO> =
         newSuspendedTransaction(Dispatchers.IO) {
-            val attempts = attemptRepo.getUserAttemptsBySection(userId, sectionId)
+            val attempts = attemptRepo.getUserAttemptsByTheme(userId, themeId)
 
             attempts.map { attempt ->
                 val task = TaskEntity

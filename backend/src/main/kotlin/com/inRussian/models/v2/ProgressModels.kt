@@ -18,7 +18,6 @@ data class AttemptInsert(
     val userId: UUID,
     val taskId: UUID,
     val themeId: UUID,
-    val sectionId: UUID,
     val courseId: UUID,
     val attemptsCount: Int,
     val timeSpentMs: Long,
@@ -32,16 +31,6 @@ data class AttemptRecord(
     val attemptsCount: Int,
     val timeSpentMs: Long,
     val createdAt: Instant
-)
-@Serializable
-data class SectionProgressDTO(
-    @Serializable(with = UUIDSerializer::class) val userId: UUID,
-    @Serializable(with = UUIDSerializer::class) val sectionId: UUID,
-    val solvedTasks: Int,
-    val totalTasks: Int,
-    val percent: Double,
-    val averageTimeMs: Int,
-    @Serializable(with = InstantSerializer::class) val updatedAt: Instant
 )
 
 @Serializable
@@ -58,26 +47,27 @@ data class CourseProgressDTO(
 @Serializable
 data class AwardedBadgeDTO(
     @Serializable(with = UUIDSerializer::class) val badgeId: UUID,
-    @Serializable(with = UUIDSerializer::class) val sectionId: UUID? = null,
-    @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null,
+    @Serializable(with = InstantSerializer::class) val awardedAt: Instant,
+    @Serializable(with = UUIDSerializer::class) val themeId: UUID? = null
 )
 
 @Serializable
 data class SolveResult(
     val removedFromQueue: Boolean,
     val movedToEnd: Boolean,
-    val sectionProgress: SectionProgressDTO? = null,
+    val themeProgress: ThemeProgressDTO? = null,
     val courseProgress: CourseProgressDTO? = null,
     val newlyAwardedBadges: List<AwardedBadgeDTO> = emptyList(),
-    val sectionCompleted: Boolean
+    val themeCompleted: Boolean
 )
 
 @Serializable
 data class NextTaskResult(
     @Serializable(with = UUIDSerializer::class) val taskId: UUID,
-    @Serializable(with = UUIDSerializer::class) val sectionId: UUID,
     @Serializable(with = UUIDSerializer::class) val themeId: UUID
 )
+
 @Serializable
 data class UserStatsDTO(
     @Serializable(with = UUIDSerializer::class) val userId: UUID,
@@ -88,17 +78,18 @@ data class UserStatsDTO(
 data class CourseStatsDTO(
     @Serializable(with = UUIDSerializer::class) val courseId: UUID,
     val courseProgress: CourseProgressDTO?,
-    val sections: List<SectionProgressDTO>
+    val themes: List<ThemeProgressDTO>
 )
+
 @Serializable
 data class BadgeRuleDTO(
     @Serializable(with = UUIDSerializer::class) val badgeId: UUID,
     val type: String,
-    @Serializable(with = UUIDSerializer::class) val sectionId: UUID? = null,
     @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null,
     val streakDays: Int? = null,
     val active: Boolean
 )
+
 @Serializable
 data class AverageProgressDTO(
     val solvedTasksAvg: Double,
@@ -106,45 +97,58 @@ data class AverageProgressDTO(
     val percentAvg: Double,
     val averageTimeMsAvg: Double,
     val participants: Int,
-    @Serializable(with = InstantSerializer::class)val lastUpdatedAt: Instant?
+    @Serializable(with = InstantSerializer::class) val lastUpdatedAt: Instant?
 )
+
 @Serializable
-data class SectionAverageDTO(
-    @Serializable(with = UUIDSerializer::class) val sectionId: UUID,
+data class CourseAverageStatsDTO(
+    @Serializable(with = UUIDSerializer::class) val courseId: UUID,
+    val courseAverage: AverageProgressDTO?,
+    val themesAverage: List<ThemeAverageDTO>
+)
+
+@Serializable
+data class PlatformStatsDTO(
+    val totalCourses: Int,
+    val totalUsersWithProgress: Int,
+    val courseLevelAverage: AverageProgressDTO?,
+    val themeLevelAverage: AverageProgressDTO?,
+    @Serializable(with = InstantSerializer::class) val generatedAt: Instant
+)
+
+@Serializable
+data class ThemeProgressDTO(
+    @Serializable(with = UUIDSerializer::class) val userId: UUID,
+    @Serializable(with = UUIDSerializer::class) val themeId: UUID,
+    val solvedTasks: Int,
+    val totalTasks: Int,
+    val percent: Double,
+    val averageTimeMs: Int,
+    @Serializable(with = InstantSerializer::class) val updatedAt: Instant
+)
+
+@Serializable
+data class ThemeAverageDTO(
+    @Serializable(with = UUIDSerializer::class) val themeId: UUID,
     @Serializable(with = UUIDSerializer::class) val courseId: UUID,
     val solvedTasksAvg: Double,
     val totalTasksAvg: Double,
     val percentAvg: Double,
     val averageTimeMsAvg: Double,
     val participants: Int,
-    @Serializable(with = InstantSerializer::class)val lastUpdatedAt: Instant?
+    @Serializable(with = InstantSerializer::class) val lastUpdatedAt: Instant?
 )
-@Serializable
-data class CourseAverageStatsDTO(
-    @Serializable(with = UUIDSerializer::class) val courseId: UUID,
-    val courseAverage: AverageProgressDTO?,
-    val sectionsAverage: List<SectionAverageDTO>
-)
-@Serializable
-data class PlatformStatsDTO(
-    val totalCourses: Int,
-    val totalUsersWithProgress: Int,
-    val courseLevelAverage: AverageProgressDTO?,
-    val sectionLevelAverage: AverageProgressDTO?,
-    @Serializable(with = InstantSerializer::class) val generatedAt: Instant
-)
-
 
 @Serializable
 data class UserAwardedBadgeDTO(
     @Serializable(with = UUIDSerializer::class) val id: UUID,
     @Serializable(with = UUIDSerializer::class) val userId: UUID,
     @Serializable(with = UUIDSerializer::class) val badgeId: UUID,
-    @Serializable(with = UUIDSerializer::class) val sectionId: UUID? = null,
     @Serializable(with = UUIDSerializer::class) val courseId: UUID? = null,
     @Serializable(with = InstantSerializer::class) val awardedAt: Instant,
     val rule: BadgeRuleDTO
 )
+
 @Serializable
 data class UserAttemptDTO(
     @Serializable(with = UUIDSerializer::class) val attemptId: UUID,
@@ -155,6 +159,7 @@ data class UserAttemptDTO(
     val timeSpentMs: Long,
     @Serializable(with = InstantSerializer::class) val createdAt: Instant
 )
+
 object UUIDSerializer : KSerializer<UUID> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("UUID", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: UUID) = encoder.encodeString(value.toString())

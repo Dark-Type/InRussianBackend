@@ -18,21 +18,22 @@ import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import java.util.UUID
 
-fun Route.sectionRoutes(
+fun Route.themeRoutes(
     queueService: QueueService,
     progressService: ProgressService
 ) {
     authenticate("auth-jwt") {
-        get("/sections/{sectionId}/tasks/next") {
+        // Get next task within a specific theme queue
+        get("/themes/{themeId}/tasks/next") {
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val sectionId = call.parameters["sectionId"]?.let(UUID::fromString)
-            if (sectionId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid sectionId")
+            val themeId = call.parameters["themeId"]?.let(UUID::fromString)
+            if (themeId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
                 return@get
             }
 
-            val next = queueService.getOrSeedNextTask(userId.let(UUID::fromString), sectionId)
+            val next = queueService.getOrSeedNextTask(UUID.fromString(userId), themeId)
             if (next == null) {
                 call.respond(HttpStatusCode.NoContent)
                 return@get
@@ -40,15 +41,16 @@ fun Route.sectionRoutes(
             call.respond(next)
         }
 
-        get("/sections/{sectionId}/progress") {
+        // Get theme-level progress
+        get("/themes/{themeId}/progress") {
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val sectionId = call.parameters["sectionId"]?.let(UUID::fromString)
-            if (sectionId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid sectionId")
+            val themeId = call.parameters["themeId"]?.let(UUID::fromString)
+            if (themeId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
                 return@get
             }
-            val progress = progressService.sectionProgress(UUID.fromString(userId), sectionId)
+            val progress = progressService.themeProgress(UUID.fromString(userId), themeId)
             call.respond(progress)
         }
     }
@@ -89,7 +91,7 @@ fun Route.attemptRoutes(
             val result = solveService.submitSolved(
                 SolveService.SubmitParams(
                     attemptId = body.attemptId,
-                    userId = userId.let(UUID::fromString),
+                    userId = UUID.fromString(userId),
                     taskId = body.taskId,
                     attemptsCount = body.attemptsCount,
                     timeSpentMs = body.timeSpentMs
@@ -101,7 +103,6 @@ fun Route.attemptRoutes(
     }
 }
 
-
 fun Route.badgeRoutes(
     badgesQueryService: BadgesQueryService
 ) {
@@ -109,12 +110,12 @@ fun Route.badgeRoutes(
         get("/me/badges") {
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val badges = badgesQueryService.listUserBadges(userId.let(UUID::fromString))
+            val badges = badgesQueryService.listUserBadges(UUID.fromString(userId))
             call.respond(badges)
         }
 
         get("/badges/{badgeId}") {
-            val badgeId = call.parameters["badgeId"].let(UUID::fromString)
+            val badgeId = call.parameters["badgeId"]?.let(UUID::fromString)
             if (badgeId == null) {
                 call.respond(HttpStatusCode.BadRequest, "Invalid badgeId")
                 return@get
@@ -159,23 +160,24 @@ fun Route.statsRoutes(
         }
     }
 }
+
 fun Route.userAttemptRoutes(
     userAttemptService: UserAttemptService
 ) {
     authenticate("auth-jwt") {
-        get("/sections/{sectionId}/my-attempts") {
+        get("/themes/{themeId}/my-attempts") {
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val sectionId = call.parameters["sectionId"]?.let(UUID::fromString)
+            val themeId = call.parameters["themeId"]?.let(UUID::fromString)
 
-            if (sectionId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid sectionId")
+            if (themeId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
                 return@get
             }
 
-            val attempts = userAttemptService.getUserSectionAttempts(
+            val attempts = userAttemptService.getUserThemeAttempts(
                 UUID.fromString(userId),
-                sectionId
+                themeId
             )
             call.respond(attempts)
         }

@@ -21,7 +21,6 @@ import com.inRussian.repositories.v2.AttemptRepository
 import com.inRussian.repositories.v2.BadgeRepository
 import com.inRussian.repositories.v2.ProgressRepository
 import com.inRussian.repositories.v2.QueueRepository
-import com.inRussian.repositories.v2.SectionCompletionRepository
 import com.inRussian.repositories.v2.StatsRepository
 import com.inRussian.repositories.v2.TaskStateRepository
 
@@ -50,8 +49,8 @@ import com.inRussian.routes.taskRoutes
 import com.inRussian.routes.v2.attemptRoutes
 import com.inRussian.routes.v2.badgeRoutes
 import com.inRussian.routes.v2.courseRoutes
-import com.inRussian.routes.v2.sectionRoutes
 import com.inRussian.routes.v2.statsRoutes
+import com.inRussian.routes.v2.themeRoutes
 import com.inRussian.routes.v2.userAttemptRoutes
 import com.inRussian.services.MediaService
 import com.inRussian.services.mailer.GmailMailer
@@ -85,7 +84,6 @@ fun Application.configureRouting() {
     val queueRepo = QueueRepository()
     val progressRepo = ProgressRepository()
     val badgeRepo = BadgeRepository()
-    val completionRepo = SectionCompletionRepository()
     val statsRepo = StatsRepository()
     val badgesQueryService = BadgesQueryService()
 
@@ -99,10 +97,9 @@ fun Application.configureRouting() {
         stateRepo = stateRepo,
         queueRepo = queueRepo,
         progressRepo = progressRepo,
-        badgeService = badgeService,
-        completionRepo = completionRepo
+        badgeService = badgeService
     )
-    val statsService = StatsService(statsRepo, progressRepo)
+    val statsService = StatsService(statsRepo)
     val mailer: Mailer = GmailMailer(
         host = environment.config.property("mailer.host").getString(),
         port = environment.config.property("mailer.port").getString().toInt(),
@@ -130,11 +127,14 @@ fun Application.configureRouting() {
         studentRoutes(studentService)
         mediaRoutes(mediaService)
         taskRoutes(TaskRepository())
-        sectionRoutes(queueService, progressService)
         courseRoutes(progressService)
         attemptRoutes(solveService)
         badgeRoutes(badgesQueryService)
         statsRoutes(statsService)
+        themeRoutes(
+            queueService = queueService,
+            progressService = progressService
+        )
         userAttemptRoutes(userAttemptService)
     }
 

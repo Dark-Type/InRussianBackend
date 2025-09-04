@@ -28,7 +28,6 @@ class AttemptRepository {
             it[userId] = a.userId
             it[taskId] = a.taskId
             it[themeId] = a.themeId
-            it[sectionId] = a.sectionId
             it[courseId] = a.courseId
             it[attemptsCount] = a.attemptsCount
             it[timeSpentMs] = a.timeSpentMs
@@ -48,13 +47,13 @@ class AttemptRepository {
             ?.let(::toRecord)
     }
 
-    suspend fun getUserAttemptsBySection(userId: UUID, sectionId: UUID): List<AttemptRecord> =
+    suspend fun getUserAttemptsByTheme(userId: UUID, themeId: UUID): List<AttemptRecord> =
         newSuspendedTransaction(Dispatchers.IO) {
             UserTaskAttemptTable
                 .selectAll()
                 .where {
                     (UserTaskAttemptTable.userId eq userId) and
-                            (UserTaskAttemptTable.sectionId eq sectionId)
+                            (UserTaskAttemptTable.themeId eq themeId)
                 }
                 .orderBy(UserTaskAttemptTable.createdAt, SortOrder.DESC)
                 .map(::toRecord)

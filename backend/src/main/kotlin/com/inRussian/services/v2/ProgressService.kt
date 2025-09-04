@@ -1,10 +1,10 @@
 package com.inRussian.services.v2
 
 import com.inRussian.models.v2.CourseProgressDTO
-import com.inRussian.models.v2.SectionProgressDTO
+import com.inRussian.models.v2.ThemeProgressDTO
 import com.inRussian.repositories.v2.ProgressRepository
 import com.inRussian.tables.v2.UserCourseProgressTable
-import com.inRussian.tables.v2.UserSectionProgressTable
+import com.inRussian.tables.v2.UserThemeProgressTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -16,13 +16,13 @@ class ProgressService(
     private val progressRepo: ProgressRepository
 ) {
 
-    suspend fun sectionProgress(userId: UUID, sectionId: UUID): SectionProgressDTO =
+    suspend fun themeProgress(userId: UUID, themeId: UUID): ThemeProgressDTO =
         newSuspendedTransaction(Dispatchers.IO) {
-            progressRepo.getSectionProgress(userId, sectionId)
-                ?.let(::toSectionDTO)
-                ?: SectionProgressDTO(
+            progressRepo.getThemeProgress(userId, themeId)
+                ?.let(::toThemeDTO)
+                ?: ThemeProgressDTO(
                     userId = userId,
-                    sectionId = sectionId,
+                    themeId = themeId,
                     solvedTasks = 0,
                     totalTasks = 0,
                     percent = 0.0,
@@ -46,15 +46,15 @@ class ProgressService(
                 )
         }
 
-    private fun toSectionDTO(row: ResultRow): SectionProgressDTO =
-        SectionProgressDTO(
-            userId = row[UserSectionProgressTable.userId],
-            sectionId = row[UserSectionProgressTable.sectionId],
-            solvedTasks = row[UserSectionProgressTable.solvedTasks],
-            totalTasks = row[UserSectionProgressTable.totalTasks],
-            percent = row[UserSectionProgressTable.percentComplete],
-            averageTimeMs = row[UserSectionProgressTable.averageTimeMs],
-            updatedAt = row[UserSectionProgressTable.updatedAt].atOffset(ZoneOffset.UTC).toInstant()
+    private fun toThemeDTO(row: ResultRow): ThemeProgressDTO =
+        ThemeProgressDTO(
+            userId = row[UserThemeProgressTable.userId],
+            themeId = row[UserThemeProgressTable.themeId],
+            solvedTasks = row[UserThemeProgressTable.solvedTasks],
+            totalTasks = row[UserThemeProgressTable.totalTasks],
+            percent = row[UserThemeProgressTable.percentComplete],
+            averageTimeMs = row[UserThemeProgressTable.averageTimeMs],
+            updatedAt = row[UserThemeProgressTable.updatedAt].atOffset(ZoneOffset.UTC).toInstant()
         )
 
     private fun toCourseDTO(row: ResultRow): CourseProgressDTO =

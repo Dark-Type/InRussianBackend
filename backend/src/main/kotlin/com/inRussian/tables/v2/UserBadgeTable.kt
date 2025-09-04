@@ -7,27 +7,27 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 
 
 enum class SimpleBadgeRuleType {
-    SECTION_COMPLETED, COURSE_COMPLETED, DAILY_STREAK
+    THEME_COMPLETED, COURSE_COMPLETED, DAILY_STREAK
 }
 
 object BadgeRuleTable : UUIDTable("badge_rule") {
     val badgeId = uuid("badge_id").index()
     val type = enumerationByName("type", 64, SimpleBadgeRuleType::class)
-    val sectionId = uuid("section_id").nullable().index()
     val courseId = uuid("course_id").nullable().index()
     val streakDays = integer("streak_days").nullable()
     val active = bool("active").default(true)
+    val themeId = uuid("theme_id").nullable().index()
 }
 
 object UserBadgeTable : UUIDTable("user_badge") {
     val userId = uuid("user_id").index()
     val badgeId = uuid("badge_id").index()
-    val sectionId = uuid("section_id").nullable().index()
     val courseId = uuid("course_id").nullable().index()
+    val themeId = uuid("theme_id").nullable().index()
     val awardedAt = timestamp("awarded_at")
 
     init {
-        uniqueIndex("uq_user_badge_context", userId, badgeId, sectionId, courseId)
+        uniqueIndex("uq_user_badge_context", userId, badgeId, courseId)
     }
 }
 

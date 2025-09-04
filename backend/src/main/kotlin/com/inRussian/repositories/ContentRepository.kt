@@ -4,31 +4,48 @@ import com.inRussian.models.content.*
 import com.inRussian.models.tasks.*
 import com.inRussian.requests.content.*
 import com.inRussian.tables.*
-import com.inRussian.tables.TaskContent
+import kotlinx.serialization.PolymorphicSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.modules.polymorphic
+import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
-import org.jetbrains.exposed.sql.name
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.util.*
-import kotlin.toString
+
+
+@Serializable
+data class ThemeContents(
+    val theme: Theme,
+    val childThemes: List<Theme>,
+    val tasks: List<TaskModel>
+)
+
+@Serializable
+data class ThemeTreeNode(
+    val theme: Theme,
+    val children: List<ThemeTreeNode>
+)
 
 interface ContentRepository {
-    // Tasks
 
     // Themes
     suspend fun createTheme(request: CreateThemeRequest): Theme
     suspend fun getTheme(themeId: String): Theme?
     suspend fun updateTheme(themeId: String, request: UpdateThemeRequest): Theme?
     suspend fun deleteTheme(themeId: String): Boolean
-    suspend fun getThemesBySection(sectionId: String): List<Theme>
 
-    // Sections
-    suspend fun createSection(request: CreateSectionRequest): Section
-    suspend fun getSection(sectionId: String): Section?
-    suspend fun updateSection(sectionId: String, request: UpdateSectionRequest): Section?
-    suspend fun deleteSection(sectionId: String): Boolean
-    suspend fun getSectionsByCourse(courseId: String): List<Section>
+    // New: theme discovery in the new hierarchy
+    suspend fun getThemesByCourse(courseId: String): List<Theme>
+    suspend fun getThemesByTheme(parentThemeId: String): List<Theme>
+    suspend fun getThemeContents(themeId: String): ThemeContents?
+    suspend fun getThemeSubtree(themeId: String): ThemeTreeNode?
+    suspend fun getCourseThemeTree(courseId: String): List<ThemeTreeNode>
+    suspend fun getTasksByTheme(themeId: String): List<TaskModel>
 
     // Courses
     suspend fun createCourse(authorId: String, request: CreateCourseRequest): Course
@@ -46,68 +63,32 @@ interface ContentRepository {
     // Statistics
     suspend fun getCountStats(): CountStats
     suspend fun getCourseTasksCount(courseId: String): Long
-    suspend fun getSectionTasksCount(sectionId: String): Long
     suspend fun getThemeTasksCount(themeId: String): Long
-
 }
 
 class ExposedContentRepository : ContentRepository {
 
-    private fun ResultRow.toTask() = TaskWithDetails(
-        id = this[Tasks.id].toString(),
-        themeId = this[Tasks.themeId].toString(),
-        name = this[Tasks.name],
-        taskType = this[Tasks.taskType],
-        question = this[Tasks.question],
-        instructions = this[Tasks.instructions],
-        isTraining = this[Tasks.isTraining],
-        orderNum = this[Tasks.orderNum],
-        createdAt = this[Tasks.createdAt].toString()
-    )
 
-    private fun ResultRow.toTaskContent() = TaskContentItem(
-        id = this[TaskContent.id].toString(),
-        taskId = this[TaskContent.taskId].toString(),
-        contentType = this[TaskContent.contentType],
-        contentId = this[TaskContent.contentId],
-        description = this[TaskContent.description],
-        transcription = this[TaskContent.transcription],
-        translation = this[TaskContent.translation],
-        orderNum = this[TaskContent.orderNum]
-    )
+    private val taskJson = Json {
+        serializersModule = SerializersModule {
+            polymorphic(TaskBody::class) {
+                subclass(TaskBody.AudioConnectTask::class, TaskBody.AudioConnectTask.serializer())
+                subclass(TaskBody.TextConnectTask::class, TaskBody.TextConnectTask.serializer())
+                subclass(TaskBody.TextInputTask::class, TaskBody.TextInputTask.serializer())
+                subclass(TaskBody.TextInputWithVariantTask::class, TaskBody.TextInputWithVariantTask.serializer())
+                subclass(TaskBody.ImageConnectTask::class, TaskBody.ImageConnectTask.serializer())
+                subclass(TaskBody.ListenAndSelect::class, TaskBody.ListenAndSelect.serializer())
+                subclass(TaskBody.ImageAndSelect::class, TaskBody.ImageAndSelect.serializer())
+                subclass(TaskBody.ConstructSentenceTask::class, TaskBody.ConstructSentenceTask.serializer())
+                subclass(TaskBody.SelectWordsTask::class, TaskBody.SelectWordsTask.serializer())
+            }
+            PolymorphicSerializer(TaskBody::class)
+        }
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
 
-    private fun ResultRow.toTaskAnswer() = TaskAnswerItem(
-        taskId = this[TaskAnswers.taskId].toString(),
-        answerType = this[TaskAnswers.answerType],
-        correctAnswer = this[TaskAnswers.correctAnswer]
-    )
-
-    private fun ResultRow.toTaskAnswerOption() = TaskAnswerOptionItem(
-        id = this[TaskAnswerOptions.id].toString(),
-        taskId = this[TaskAnswerOptions.taskId].toString(),
-        optionText = this[TaskAnswerOptions.optionText],
-        optionAudioId = this[TaskAnswerOptions.optionAudioId],
-        isCorrect = this[TaskAnswerOptions.isCorrect],
-        orderNum = this[TaskAnswerOptions.orderNum]
-    )
-
-    private fun ResultRow.toTheme() = Theme(
-        id = this[Themes.id].toString(),
-        sectionId = this[Themes.sectionId].toString(),
-        name = this[Themes.name],
-        description = this[Themes.description],
-        orderNum = this[Themes.orderNum],
-        createdAt = this[Themes.createdAt].toString()
-    )
-
-    private fun ResultRow.toSection() = Section(
-        id = this[Sections.id].toString(),
-        courseId = this[Sections.courseId].toString(),
-        name = this[Sections.name],
-        description = this[Sections.description],
-        orderNum = this[Sections.orderNum],
-        createdAt = this[Sections.createdAt].toString()
-    )
+    // ---------- Mappers ----------
 
     private fun ResultRow.toCourse() = Course(
         id = this[Courses.id].toString(),
@@ -121,6 +102,7 @@ class ExposedContentRepository : ContentRepository {
         updatedAt = this[Courses.updatedAt].toString(),
         posterId = this[Courses.posterId]?.toString()
     )
+
     private fun ResultRow.toReport() = Report(
         id = this[Reports.id].toString(),
         description = this[Reports.description],
@@ -129,114 +111,242 @@ class ExposedContentRepository : ContentRepository {
         createdAt = this[Reports.createdAt].toString()
     )
 
+    private fun ResultRow.toTheme() = Theme(
+        id = this[Themes.id].toString(),
+        courseId = this[Themes.courseId].toString(),
+        parentThemeId = this[Themes.parentThemeId]?.toString(),
+        name = this[Themes.name],
+        description = this[Themes.description],
+        position = this[Themes.position],
+        createdAt = this[Themes.createdAt].toString()
+    )
 
+    // ---------- Internal helpers for tasks (same logic as TaskRepository) ----------
+
+    private fun loadTaskTypes(taskId: UUID): List<TaskType> =
+        TaskToTypes
+            .join(
+                TaskTypes,
+                JoinType.INNER,
+                onColumn = TaskToTypes.typeName,
+                otherColumn = TaskTypes.name
+            )
+            .selectAll().where { TaskToTypes.task eq taskId }
+            .map { row ->
+                val cleaned = row[TaskToTypes.typeName].trim().trim('"')
+                enumValues<TaskType>().first { it.name.equals(cleaned, ignoreCase = true) }
+            }
+
+    private fun loadTaskModelById(taskId: UUID): TaskModel? {
+        val taskEntity = TaskEntity
+            .selectAll().where { TaskEntity.id eq taskId }
+            .singleOrNull() ?: return null
+
+        val taskBody = taskJson.decodeFromJsonElement(
+            PolymorphicSerializer(TaskBody::class),
+            taskEntity[TaskEntity.taskBody]
+        )
+        val types = loadTaskTypes(taskId)
+
+        return TaskModel(
+            id = taskEntity[TaskEntity.id].value.toString(),
+            taskType = types,
+            taskBody = taskBody,
+            question = taskEntity[TaskEntity.question],
+            createdAt = taskEntity[TaskEntity.createdAt].toString(),
+            updatedAt = taskEntity[TaskEntity.updatedAt].toString()
+        )
+    }
+
+    private fun listTasksByTheme(themeUuid: UUID): List<TaskModel> {
+        val ids = TaskEntity
+            .selectAll().where { TaskEntity.themeId eq themeUuid }
+            .orderBy(TaskEntity.createdAt to SortOrder.ASC)
+            .map { it[TaskEntity.id].value }
+
+        return ids.mapNotNull { id ->
+            loadTaskModelById(id)
+        }
+    }
+
+    private fun collectSubtreeThemeIds(rootId: UUID): List<UUID> = transaction {
+        val result = LinkedHashSet<UUID>()
+        val queue = ArrayDeque<UUID>()
+        result.add(rootId)
+        queue.add(rootId)
+
+        while (queue.isNotEmpty()) {
+            val batch = queue.toList()
+            queue.clear()
+
+            Themes
+                .selectAll().where { Themes.parentThemeId inList batch }
+                .forEach { row ->
+                    val childId = row[Themes.id].value
+                    if (result.add(childId)) queue.add(childId)
+                }
+        }
+        result.toList()
+    }
+
+    private fun deleteTasksAndRelated(taskIds: List<EntityID<UUID>>) {
+        if (taskIds.isEmpty()) return
+        TaskEntity.deleteWhere { TaskEntity.id inList taskIds }
+    }
+
+    // ---------- Themes ----------
 
     override suspend fun createTheme(request: CreateThemeRequest): Theme = transaction {
-        val themeId = Themes.insertAndGetId {
-            it[sectionId] = UUID.fromString(request.sectionId)
-            it[name] = request.name
-            it[description] = request.description
-            it[orderNum] = request.orderNum
+        val parentId = request.parentThemeId?.let(UUID::fromString)
+
+        val courseUuid: UUID = if (parentId != null) {
+            Themes
+                .selectAll().where { Themes.id eq parentId }
+                .limit(1)
+                .firstOrNull()?.get(Themes.courseId)?.value
+                ?: throw IllegalArgumentException("Parent theme not found: $parentId")
+        } else {
+            request.courseId?.let(UUID::fromString)
+                ?: throw IllegalArgumentException("courseId is required for root themes")
         }
 
-        Themes.selectAll().where { Themes.id eq themeId }.single().toTheme()
+        if (parentId != null) {
+            val parentHasTasks = TaskEntity
+                .selectAll().where { TaskEntity.themeId eq parentId }
+                .limit(1)
+                .any()
+            if (parentHasTasks) {
+                throw IllegalStateException("Cannot create a child theme under a theme that already has tasks")
+            }
+        }
+
+        val newId = Themes.insertAndGetId {
+            it[name] = request.name
+            it[description] = request.description
+            it[courseId] = EntityID(courseUuid, Courses)
+            it[parentThemeId] = parentId?.let { pid -> EntityID(pid, Themes) }
+            request.position?.let { pos -> it[position] = pos }
+        }
+
+        Themes.selectAll().where { Themes.id eq newId }.single().toTheme()
     }
 
     override suspend fun getTheme(themeId: String): Theme? = transaction {
-        Themes.selectAll().where { Themes.id eq UUID.fromString(themeId) }
-            .singleOrNull()?.toTheme()
+        Themes
+            .selectAll().where { Themes.id eq UUID.fromString(themeId) }
+            .singleOrNull()
+            ?.toTheme()
     }
 
     override suspend fun updateTheme(themeId: String, request: UpdateThemeRequest): Theme? {
         val themeUuid = UUID.fromString(themeId)
         transaction {
-            Themes.update({ Themes.id eq themeUuid }) {
-                request.name?.let { name -> it[Themes.name] = name }
-                request.description?.let { desc -> it[Themes.description] = desc }
-                request.orderNum?.let { order -> it[Themes.orderNum] = order }
+            Themes.update({ Themes.id eq themeUuid }) { row ->
+                request.name?.let { row[Themes.name] = it }
+                request.description?.let { row[Themes.description] = it }
+                request.position?.let { row[Themes.position] = it }
+                request.parentThemeId?.let { pid ->
+                    val newParentUuid = UUID.fromString(pid)
+                    val parentHasTasks = TaskEntity
+                        .selectAll().where { TaskEntity.themeId eq newParentUuid }
+                        .limit(1)
+                        .any()
+                    if (parentHasTasks) {
+                        throw IllegalStateException("Cannot move theme under a parent that already has tasks")
+                    }
+                    row[Themes.parentThemeId] = EntityID(newParentUuid, Themes)
+                }
             }
         }
         return getTheme(themeId)
     }
 
     override suspend fun deleteTheme(themeId: String): Boolean = transaction {
-        val themeUuid = UUID.fromString(themeId)
+        val rootId = UUID.fromString(themeId)
+        val subtreeIds = collectSubtreeThemeIds(rootId)
 
-        val taskIds = Tasks.selectAll().where { Tasks.themeId eq themeUuid }
-            .map { it[Tasks.id] }
+        val taskIds = TaskEntity
+            .selectAll().where { TaskEntity.themeId inList subtreeIds }
+            .map { it[TaskEntity.id] }
 
-        taskIds.forEach { taskId ->
-            TaskContent.deleteWhere { TaskContent.taskId eq taskId }
-            TaskAnswers.deleteWhere { TaskAnswers.taskId eq taskId }
-            TaskAnswerOptions.deleteWhere { TaskAnswerOptions.taskId eq taskId }
-        }
+        deleteTasksAndRelated(taskIds)
 
-        Tasks.deleteWhere { Tasks.themeId eq themeUuid }
-        Themes.deleteWhere { Themes.id eq themeUuid } > 0
+        Themes.deleteWhere { Themes.id inList subtreeIds } > 0
     }
 
-    override suspend fun getThemesBySection(sectionId: String): List<Theme> = transaction {
-        Themes.selectAll().where { Themes.sectionId eq UUID.fromString(sectionId) }
-            .orderBy(Themes.orderNum)
+    override suspend fun getThemesByCourse(courseId: String): List<Theme> = transaction {
+        Themes
+            .selectAll().where { (Themes.courseId eq UUID.fromString(courseId)) and (Themes.parentThemeId.isNull()) }
+            .orderBy(Themes.position to SortOrder.ASC, Themes.createdAt to SortOrder.ASC)
             .map { it.toTheme() }
     }
 
-    override suspend fun createSection(request: CreateSectionRequest): Section = transaction {
-        val sectionId = Sections.insertAndGetId {
-            it[courseId] = UUID.fromString(request.courseId)
-            it[name] = request.name
-            it[description] = request.description
-            it[orderNum] = request.orderNum
+    override suspend fun getThemesByTheme(parentThemeId: String): List<Theme> = transaction {
+        Themes
+            .selectAll().where { Themes.parentThemeId eq UUID.fromString(parentThemeId) }
+            .orderBy(Themes.position to SortOrder.ASC, Themes.createdAt to SortOrder.ASC)
+            .map { it.toTheme() }
+    }
+
+    override suspend fun getTasksByTheme(themeId: String): List<TaskModel> = transaction {
+        listTasksByTheme(UUID.fromString(themeId))
+    }
+
+    override suspend fun getThemeContents(themeId: String): ThemeContents? = transaction {
+        val themeRow = Themes
+            .selectAll().where { Themes.id eq UUID.fromString(themeId) }
+            .singleOrNull() ?: return@transaction null
+
+        val theme = themeRow.toTheme()
+
+        val children = Themes
+            .selectAll().where { Themes.parentThemeId eq UUID.fromString(theme.id) }
+            .orderBy(Themes.position to SortOrder.ASC, Themes.createdAt to SortOrder.ASC)
+            .map { it.toTheme() }
+
+        val tasks = listTasksByTheme(UUID.fromString(theme.id))
+
+        ThemeContents(theme = theme, childThemes = children, tasks = tasks)
+    }
+
+    override suspend fun getThemeSubtree(themeId: String): ThemeTreeNode? = transaction {
+        val root = Themes
+            .selectAll().where { Themes.id eq UUID.fromString(themeId) }
+            .singleOrNull()
+            ?.toTheme()
+            ?: return@transaction null
+
+        fun buildNode(current: Theme): ThemeTreeNode {
+            val children = Themes
+                .selectAll().where { Themes.parentThemeId eq UUID.fromString(current.id) }
+                .orderBy(Themes.position to SortOrder.ASC, Themes.createdAt to SortOrder.ASC)
+                .map { it.toTheme() }
+            val childNodes = children.map { buildNode(it) }
+            return ThemeTreeNode(theme = current, children = childNodes)
         }
 
-        Sections.selectAll().where { Sections.id eq sectionId }.single().toSection()
+        buildNode(root)
     }
 
-    override suspend fun getSection(sectionId: String): Section? = transaction {
-        Sections.selectAll().where { Sections.id eq UUID.fromString(sectionId) }
-            .singleOrNull()?.toSection()
-    }
+    override suspend fun getCourseThemeTree(courseId: String): List<ThemeTreeNode> = transaction {
+        val roots = Themes
+            .selectAll().where { (Themes.courseId eq UUID.fromString(courseId)) and (Themes.parentThemeId.isNull()) }
+            .orderBy(Themes.position to SortOrder.ASC, Themes.createdAt to SortOrder.ASC)
+            .map { it.toTheme() }
 
-    override suspend fun updateSection(sectionId: String, request: UpdateSectionRequest): Section? {
-        val sectionUuid = UUID.fromString(sectionId)
-        transaction {
-            Sections.update({ Sections.id eq sectionUuid }) {
-                request.name?.let { name -> it[Sections.name] = name }
-                request.description?.let { desc -> it[Sections.description] = desc }
-                request.orderNum?.let { order -> it[Sections.orderNum] = order }
-            }
-        }
-        return getSection(sectionId)
-    }
-
-    override suspend fun deleteSection(sectionId: String): Boolean = transaction {
-        val sectionUuid = UUID.fromString(sectionId)
-
-        val themeIds = Themes.selectAll().where { Themes.sectionId eq sectionUuid }
-            .map { it[Themes.id] }
-
-        themeIds.forEach { themeId ->
-            val taskIds = Tasks.selectAll().where { Tasks.themeId eq themeId }
-                .map { it[Tasks.id] }
-
-            taskIds.forEach { taskId ->
-                TaskContent.deleteWhere { TaskContent.taskId eq taskId }
-                TaskAnswers.deleteWhere { TaskAnswers.taskId eq taskId }
-                TaskAnswerOptions.deleteWhere { TaskAnswerOptions.taskId eq taskId }
-            }
-
-            Tasks.deleteWhere { Tasks.themeId eq themeId }
+        fun buildNode(current: Theme): ThemeTreeNode {
+            val children = Themes
+                .selectAll().where { Themes.parentThemeId eq UUID.fromString(current.id) }
+                .orderBy(Themes.position to SortOrder.ASC, Themes.createdAt to SortOrder.ASC)
+                .map { it.toTheme() }
+            val childNodes = children.map { buildNode(it) }
+            return ThemeTreeNode(theme = current, children = childNodes)
         }
 
-        Themes.deleteWhere { Themes.sectionId eq sectionUuid }
-        Sections.deleteWhere { Sections.id eq sectionUuid } > 0
+        roots.map { buildNode(it) }
     }
 
-    override suspend fun getSectionsByCourse(courseId: String): List<Section> = transaction {
-        Sections.selectAll().where { Sections.courseId eq UUID.fromString(courseId) }
-            .orderBy(Sections.orderNum)
-            .map { it.toSection() }
-    }
+    // ---------- Courses ----------
 
     override suspend fun createCourse(authorId: String, request: CreateCourseRequest): Course = transaction {
         val courseId = Courses.insertAndGetId {
@@ -253,8 +363,10 @@ class ExposedContentRepository : ContentRepository {
     }
 
     override suspend fun getCourse(courseId: String): Course? = transaction {
-        Courses.selectAll().where { Courses.id eq UUID.fromString(courseId) }
-            .singleOrNull()?.toCourse()
+        Courses
+            .selectAll().where { Courses.id eq UUID.fromString(courseId) }
+            .singleOrNull()
+            ?.toCourse()
     }
 
     override suspend fun updateCourse(courseId: String, request: UpdateCourseRequest): Course? {
@@ -262,12 +374,12 @@ class ExposedContentRepository : ContentRepository {
         transaction {
             Courses.update({ Courses.id eq courseUuid }) {
                 request.name?.let { name -> it[Courses.name] = name }
-                request.description?.let { desc -> it[description] = desc }
-                request.authorUrl?.let { url -> it[authorUrl] = url }
-                request.language?.let { lang -> it[language] = lang }
-                request.isPublished?.let { published -> it[isPublished] = published }
-                request.coursePoster?.let { poster -> it[posterId] = UUID.fromString(poster) } // FIX: обновление постера
-                it[updatedAt] = CurrentTimestamp
+                request.description?.let { desc -> it[Courses.description] = desc }
+                request.authorUrl?.let { url -> it[Courses.authorUrl] = url }
+                request.language?.let { lang -> it[Courses.language] = lang }
+                request.isPublished?.let { published -> it[Courses.isPublished] = published }
+                request.coursePoster?.let { poster -> it[Courses.posterId] = UUID.fromString(poster) }
+                it[Courses.updatedAt] = CurrentTimestamp
             }
         }
         return getCourse(courseId)
@@ -276,37 +388,29 @@ class ExposedContentRepository : ContentRepository {
     override suspend fun deleteCourse(courseId: String): Boolean = transaction {
         val courseUuid = UUID.fromString(courseId)
 
-        val sectionIds = Sections.selectAll().where { Sections.courseId eq courseUuid }
-            .map { it[Sections.id] }
+        val themeIds: List<UUID> = Themes
+            .selectAll().where { Themes.courseId eq courseUuid }
+            .map { it[Themes.id].value }
 
-        sectionIds.forEach { sectionId ->
-            val themeIds = Themes.selectAll().where { Themes.sectionId eq sectionId }
-                .map { it[Themes.id] }
-
-            themeIds.forEach { themeId ->
-                val taskIds = Tasks.selectAll().where { Tasks.themeId eq themeId }
-                    .map { it[Tasks.id] }
-
-                taskIds.forEach { taskId ->
-                    TaskContent.deleteWhere { TaskContent.taskId eq taskId }
-                    TaskAnswers.deleteWhere { TaskAnswers.taskId eq taskId }
-                    TaskAnswerOptions.deleteWhere { TaskAnswerOptions.taskId eq taskId }
-                }
-
-                Tasks.deleteWhere { Tasks.themeId eq themeId }
-            }
-
-            Themes.deleteWhere { Themes.sectionId eq sectionId }
+        if (themeIds.isNotEmpty()) {
+            val taskIds = TaskEntity
+                .selectAll().where { TaskEntity.themeId inList themeIds }
+                .map { it[TaskEntity.id] }
+            deleteTasksAndRelated(taskIds)
+            Themes.deleteWhere { Themes.id inList themeIds }
         }
 
-        Sections.deleteWhere { Sections.courseId eq courseUuid }
         Courses.deleteWhere { Courses.id eq courseUuid } > 0
     }
 
     override suspend fun getAllCourses(): List<Course> = transaction {
-        Courses.selectAll().orderBy(Courses.createdAt, SortOrder.DESC)
+        Courses
+            .selectAll()
+            .orderBy(Courses.createdAt, SortOrder.DESC)
             .map { it.toCourse() }
     }
+
+    // ---------- Reports ----------
 
     override suspend fun createReport(reporterId: String, request: CreateReportRequest): Report = transaction {
         val reportId = Reports.insertAndGetId {
@@ -319,8 +423,10 @@ class ExposedContentRepository : ContentRepository {
     }
 
     override suspend fun getReport(reportId: String): Report? = transaction {
-        Reports.selectAll().where { Reports.id eq UUID.fromString(reportId) }
-            .singleOrNull()?.toReport()
+        Reports
+            .selectAll().where { Reports.id eq UUID.fromString(reportId) }
+            .singleOrNull()
+            ?.toReport()
     }
 
     override suspend fun deleteReport(reportId: String): Boolean = transaction {
@@ -328,36 +434,31 @@ class ExposedContentRepository : ContentRepository {
     }
 
     override suspend fun getAllReports(): List<Report> = transaction {
-        Reports.selectAll().orderBy(Reports.createdAt, SortOrder.DESC)
+        Reports
+            .selectAll()
+            .orderBy(Reports.createdAt, SortOrder.DESC)
             .map { it.toReport() }
     }
 
+    // ---------- Statistics ----------
+
     override suspend fun getCountStats(): CountStats = transaction {
         val coursesCount = Courses.selectAll().count()
-        val sectionsCount = Sections.selectAll().count()
         val themesCount = Themes.selectAll().count()
         val tasksCount = TaskEntity.selectAll().count()
-
-        CountStats(coursesCount, sectionsCount, themesCount, tasksCount)
+        CountStats(coursesCount, themesCount, tasksCount)
     }
 
     override suspend fun getCourseTasksCount(courseId: String): Long = transaction {
-        (Sections innerJoin Themes innerJoin TaskEntity)
-            .selectAll()
-            .where { Sections.courseId eq UUID.fromString(courseId) }
+        (TaskEntity innerJoin Themes)
+            .selectAll().where { Themes.courseId eq UUID.fromString(courseId) }
             .count()
     }
 
-    override suspend fun getSectionTasksCount(sectionId: String): Long = transaction {
-        (Themes innerJoin TaskEntity)
-            .selectAll()
-            .where { Themes.sectionId eq UUID.fromString(sectionId) }
-            .count()
-    }
     override suspend fun getThemeTasksCount(themeId: String): Long = transaction {
-        TaskEntity
-            .selectAll()
-            .where { TaskEntity.themeId eq UUID.fromString(themeId) }
-            .count()
+        val themeUuid = UUID.fromString(themeId)
+        val subtreeIds = collectSubtreeThemeIds(themeUuid)
+        if (subtreeIds.isEmpty()) 0L
+        else TaskEntity.selectAll().where { TaskEntity.themeId inList subtreeIds }.count()
     }
 }

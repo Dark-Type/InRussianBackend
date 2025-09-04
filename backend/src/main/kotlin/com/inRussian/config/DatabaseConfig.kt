@@ -6,11 +6,12 @@ import com.inRussian.tables.v2.BadgeRuleTable
 import com.inRussian.tables.v2.UserBadgeTable
 import com.inRussian.tables.v2.UserCourseProgressTable
 import com.inRussian.tables.v2.UserDailySolveTable
-import com.inRussian.tables.v2.UserSectionProgressTable
-import com.inRussian.tables.v2.UserSectionQueueItemTable
-import com.inRussian.tables.v2.UserSectionQueueStateTable
+
 import com.inRussian.tables.v2.UserTaskAttemptTable
 import com.inRussian.tables.v2.UserTaskStateTable
+import com.inRussian.tables.v2.UserThemeProgressTable
+import com.inRussian.tables.v2.UserThemeQueueItemTable
+import com.inRussian.tables.v2.UserThemeQueueStateTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import io.ktor.server.application.*
@@ -42,30 +43,24 @@ fun Application.configureDatabase() {
             UserBadgeTable,
             UserDailySolveTable,
             UserCourseProgressTable,
-            UserSectionProgressTable,
+            UserThemeQueueStateTable,
+            UserThemeQueueItemTable,
             UserTaskAttemptTable,
-            UserSectionQueueStateTable,
-            UserSectionQueueItemTable,
+            UserThemeProgressTable,
             UserTaskStateTable,
             Courses,
             CourseStatistics,
             MediaFiles,
-            Sections,
             StaffProfiles,
             Users,
             PasswordRecoveryTokens,
-            TaskAnswerOptions,
-            TaskAnswers,
-            Tasks,
             Themes,
-            TaskContent,
             UserBadges,
             UserCourseEnrollments,
             UserCourseStatistics,
             UserLanguageSkills,
             UserProfiles,
             UserStatistics,
-            UserTaskProgress,
             TaskEntity,
             TaskTypes,
             TaskToTypes,

@@ -30,7 +30,6 @@ data class Course(
 @Serializable
 data class CountStats(
     val coursesCount: Long,
-    val sectionsCount: Long,
     val themesCount: Long,
     val tasksCount: Long
 )

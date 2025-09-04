@@ -2,80 +2,58 @@ package com.inRussian.services.v2
 
 import com.inRussian.models.v2.NextTaskResult
 import com.inRussian.repositories.v2.QueueRepository
-import com.inRussian.tables.TaskEntity
-import com.inRussian.tables.Themes
-import com.inRussian.tables.v2.UserSectionQueueItemTable
-import com.inRussian.tables.v2.UserSectionQueueStateTable
 import kotlinx.coroutines.Dispatchers
-import org.jetbrains.exposed.sql.Column
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insertIgnore
-import org.jetbrains.exposed.sql.selectAll
-import org.jetbrains.exposed.sql.transactions.transaction
-import org.jetbrains.exposed.sql.update
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
-import kotlin.text.get
 
 class QueueService(
     private val queueRepo: QueueRepository
 ) {
 
-    suspend fun ensureQueueState(userId: UUID, sectionId: UUID) = newSuspendedTransaction(Dispatchers.IO) {
-        queueRepo.ensureQueueState(userId, sectionId)
+    suspend fun ensureQueueState(userId: UUID, themeId: UUID) = newSuspendedTransaction(Dispatchers.IO) {
+        queueRepo.ensureQueueState(userId, themeId)
     }
 
-    suspend fun getOrSeedNextTask(userId: UUID, sectionId: UUID): NextTaskResult? =
+    suspend fun getOrSeedNextTask(userId: UUID, themeId: UUID): NextTaskResult? =
         newSuspendedTransaction(Dispatchers.IO) {
-            queueRepo.ensureQueueState(userId, sectionId)
+            queueRepo.ensureQueueState(userId, themeId)
 
-            var size = queueRepo.getQueueSize(userId, sectionId)
+            var size = queueRepo.getQueueSize(userId, themeId)
             if (size == 0L) {
-                queueRepo.seedNextTheme(userId, sectionId)
-                size = queueRepo.getQueueSize(userId, sectionId)
+                queueRepo.seedThemeTasks(userId, themeId)
+                size = queueRepo.getQueueSize(userId, themeId)
             } else if (size == 1L) {
-                queueRepo.seedNextTheme(userId, sectionId)
+                queueRepo.seedThemeTasks(userId, themeId)
             }
 
-            val nextTaskId = queueRepo.nextItemTaskId(userId, sectionId) ?: return@newSuspendedTransaction null
-            val themeId = TaskEntity
-                .selectAll().where { TaskEntity.id eq nextTaskId }
-                .limit(1)
-                .first()[TaskEntity.themeId].value
+            val nextTaskId = queueRepo.nextItemTaskId(userId, themeId) ?: return@newSuspendedTransaction null
 
             NextTaskResult(
                 taskId = nextTaskId,
-                sectionId = sectionId,
                 themeId = themeId
             )
         }
 
-    suspend fun removeFromQueue(userId: UUID, sectionId: UUID, taskId: UUID): Boolean =
+    suspend fun removeFromQueue(userId: UUID, themeId: UUID, taskId: UUID): Boolean =
         newSuspendedTransaction(Dispatchers.IO) {
-            queueRepo.removeFromQueue(userId, sectionId, taskId) > 0
+            queueRepo.removeFromQueue(userId, themeId, taskId) > 0
         }
 
-    suspend fun moveToEnd(userId: UUID, sectionId: UUID, taskId: UUID): Boolean =
+    suspend fun moveToEnd(userId: UUID, themeId: UUID, taskId: UUID): Boolean =
         newSuspendedTransaction(Dispatchers.IO) {
-            queueRepo.moveToEnd(userId, sectionId, taskId) > 0
+            queueRepo.moveToEnd(userId, themeId, taskId) > 0
         }
 
-    suspend fun maybeSeedLowWatermark(userId: UUID, sectionId: UUID) =
+    suspend fun maybeSeedLowWatermark(userId: UUID, themeId: UUID) =
         newSuspendedTransaction(Dispatchers.IO) {
-            val size = queueRepo.getQueueSize(userId, sectionId)
-            if (size == 1L) {
-                queueRepo.seedNextTheme(userId, sectionId)
-            } else if (size == 0L) {
-                queueRepo.seedNextTheme(userId, sectionId)
+            val size = queueRepo.getQueueSize(userId, themeId)
+            if (size == 1L || size == 0L) {
+                queueRepo.seedThemeTasks(userId, themeId)
             }
         }
 
-    suspend fun currentQueueSize(userId: UUID, sectionId: UUID): Long =
+    suspend fun currentQueueSize(userId: UUID, themeId: UUID): Long =
         newSuspendedTransaction(Dispatchers.IO) {
-            queueRepo.getQueueSize(userId, sectionId)
+            queueRepo.getQueueSize(userId, themeId)
         }
 }

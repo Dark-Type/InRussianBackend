@@ -8,7 +8,6 @@ object UserTaskAttemptTable : UUIDTable("user_task_attempt") {
     val userId = uuid("user_id").index()
     val taskId = uuid("task_id").index()
     val themeId = uuid("theme_id").index()
-    val sectionId = uuid("section_id").index()
     val courseId = uuid("course_id").index()
 
     val attemptsCount = integer("attempts_count")
@@ -17,7 +16,6 @@ object UserTaskAttemptTable : UUIDTable("user_task_attempt") {
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
 
     init {
-        index(false, userId, sectionId)
         index(false, userId, courseId)
         index(false, taskId, userId)
     }

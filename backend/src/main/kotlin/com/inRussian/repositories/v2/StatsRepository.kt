@@ -1,11 +1,11 @@
 package com.inRussian.repositories.v2
 
 import com.inRussian.models.v2.AverageProgressDTO
-import com.inRussian.models.v2.SectionAverageDTO
+import com.inRussian.models.v2.ThemeAverageDTO
 import com.inRussian.tables.Courses
 import com.inRussian.tables.UserCourseEnrollments
 import com.inRussian.tables.v2.UserCourseProgressTable
-import com.inRussian.tables.v2.UserSectionProgressTable
+import com.inRussian.tables.v2.UserThemeProgressTable
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.and
@@ -33,14 +33,14 @@ class StatsRepository {
             }
             .toList()
 
-    fun listSectionProgressForUser(userId: UUID, courseIds: List<UUID>): List<ResultRow> =
+    fun listThemeProgressForUser(userId: UUID, courseIds: List<UUID>): List<ResultRow> =
         if (courseIds.isEmpty()) emptyList()
-        else UserSectionProgressTable
+        else UserThemeProgressTable
             .selectAll().where {
-                (UserSectionProgressTable.userId eq userId) and
-                        (UserSectionProgressTable.courseId inList courseIds)
+                (UserThemeProgressTable.userId eq userId) and
+                        (UserThemeProgressTable.courseId inList courseIds)
             }
-            .orderBy(UserSectionProgressTable.sectionId to SortOrder.ASC)
+            .orderBy(UserThemeProgressTable.themeId to SortOrder.ASC)
             .toList()
 
     fun getCourseAverageProgress(courseId: UUID): AverageProgressDTO? {
@@ -55,7 +55,7 @@ class StatsRepository {
             .selectAll().where { UserCourseProgressTable.courseId eq courseId }
             .firstOrNull()
 
-        val participants = row?.get(participantsExpr)?.toLong() ?: 0L
+        val participants = row?.get(participantsExpr) ?: 0L
         if (row == null || participants == 0L) return null
 
         return AverageProgressDTO(
@@ -68,26 +68,26 @@ class StatsRepository {
         )
     }
 
-    fun getSectionAverageProgressByCourse(courseId: UUID): List<SectionAverageDTO> {
-        val avgSolved = UserSectionProgressTable.solvedTasks.avg()
-        val avgTotal = UserSectionProgressTable.totalTasks.avg()
-        val avgPercent = UserSectionProgressTable.percentComplete.avg()
-        val avgAvgTime = UserSectionProgressTable.averageTimeMs.avg()
-        val participantsExpr = UserSectionProgressTable.userId.count()
-        val maxUpdated = UserSectionProgressTable.updatedAt.max()
+    fun getThemeAverageProgressByCourse(courseId: UUID): List<ThemeAverageDTO> {
+        val avgSolved = UserThemeProgressTable.solvedTasks.avg()
+        val avgTotal = UserThemeProgressTable.totalTasks.avg()
+        val avgPercent = UserThemeProgressTable.percentComplete.avg()
+        val avgAvgTime = UserThemeProgressTable.averageTimeMs.avg()
+        val participantsExpr = UserThemeProgressTable.userId.count()
+        val maxUpdated = UserThemeProgressTable.updatedAt.max()
 
-        return UserSectionProgressTable
-            .selectAll().where { UserSectionProgressTable.courseId eq courseId }
-            .groupBy(UserSectionProgressTable.sectionId, UserSectionProgressTable.courseId)
+        return UserThemeProgressTable
+            .selectAll().where { UserThemeProgressTable.courseId eq courseId }
+            .groupBy(UserThemeProgressTable.themeId, UserThemeProgressTable.courseId)
             .map { row ->
-                SectionAverageDTO(
-                    sectionId = row[UserSectionProgressTable.sectionId],
-                    courseId = row[UserSectionProgressTable.courseId],
+                ThemeAverageDTO(
+                    themeId = row[UserThemeProgressTable.themeId],
+                    courseId = row[UserThemeProgressTable.courseId],
                     solvedTasksAvg = (row[avgSolved] as? Number)?.toDouble() ?: 0.0,
                     totalTasksAvg = (row[avgTotal] as? Number)?.toDouble() ?: 0.0,
                     percentAvg = (row[avgPercent] as? Number)?.toDouble() ?: 0.0,
                     averageTimeMsAvg = (row[avgAvgTime] as? Number)?.toDouble() ?: 0.0,
-                    participants = row[participantsExpr].toLong().toInt(),
+                    participants = row[participantsExpr].toInt(),
                     lastUpdatedAt = row[maxUpdated]?.atOffset(ZoneOffset.UTC)?.toInstant()
                 )
             }
@@ -118,19 +118,19 @@ class StatsRepository {
         )
     }
 
-    fun getPlatformSectionAverages(): AverageProgressDTO? {
-        val avgSolved = UserSectionProgressTable.solvedTasks.avg()
-        val avgTotal = UserSectionProgressTable.totalTasks.avg()
-        val avgPercent = UserSectionProgressTable.percentComplete.avg()
-        val avgAvgTime = UserSectionProgressTable.averageTimeMs.avg()
-        val participantsExpr = UserSectionProgressTable.userId.countDistinct()
-        val maxUpdated = UserSectionProgressTable.updatedAt.max()
+    fun getPlatformThemeAverages(): AverageProgressDTO? {
+        val avgSolved = UserThemeProgressTable.solvedTasks.avg()
+        val avgTotal = UserThemeProgressTable.totalTasks.avg()
+        val avgPercent = UserThemeProgressTable.percentComplete.avg()
+        val avgAvgTime = UserThemeProgressTable.averageTimeMs.avg()
+        val participantsExpr = UserThemeProgressTable.userId.countDistinct()
+        val maxUpdated = UserThemeProgressTable.updatedAt.max()
 
-        val row = UserSectionProgressTable
+        val row = UserThemeProgressTable
             .selectAll()
             .firstOrNull()
 
-        val participants = row?.get(participantsExpr)?.toLong() ?: 0L
+        val participants = row?.get(participantsExpr) ?: 0L
         if (row == null || participants == 0L) return null
 
         return AverageProgressDTO(
