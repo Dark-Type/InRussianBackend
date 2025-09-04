@@ -62,7 +62,6 @@ class AuthService(
             systemLanguage = request.systemLanguage,
             status = UserStatus.PENDING_VERIFICATION
         )
-
         return register(user)
     }
 
@@ -139,22 +138,18 @@ class AuthService(
     suspend fun login(request: LoginRequest): Result<LoginResponse> {
         val user = userRepository.findByEmail(request.email)
             ?: return Result.failure(Exception("Invalid email or password"))
-        println("valid 1")
         when (user.status) {
             UserStatus.SUSPENDED -> return Result.failure(Exception("Account is suspended"))
             UserStatus.DEACTIVATED -> return Result.failure(Exception("Account is deactivated"))
             UserStatus.PENDING_VERIFICATION -> {}
             UserStatus.ACTIVE -> {}
         }
-        println("valid 2")
 
         if (!BCrypt.checkpw(request.password, user.passwordHash)) {
             return Result.failure(Exception("Invalid email or password"))
         }
-        println("valid 3")
 
         userRepository.updateLastActivity(user.id)
-        println("valid 4")
 
         return createToken(user)
     }

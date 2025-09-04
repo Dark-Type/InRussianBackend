@@ -137,13 +137,7 @@ object JWTConfig {
         issuer: String,
         expiresInMinutes: Long = 120
     ): String {
-        println("=== GENERATING ACCESS TOKEN ===")
-        println("UserId: $userId")
-        println("Role: ${role.name}")
-        println("Status: ${status.name}")
-        println("Secret: ${secret.take(10)}...")
-        println("Audience: $audience")
-        println("Issuer: $issuer")
+
 
         val token = JWT.create()
             .withAudience(audience)
@@ -156,7 +150,6 @@ object JWTConfig {
             .withIssuedAt(Date())
             .sign(Algorithm.HMAC256(secret))
 
-        println("Generated token (first 50 chars): ${token.take(50)}...")
         return token
     }
 
