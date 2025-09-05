@@ -220,12 +220,21 @@ class ExposedContentRepository : ContentRepository {
             }
         }
 
+        val pos = (request.position ?: run {
+            val siblingCount = if (parentId != null) {
+                Themes.selectAll().where { Themes.parentThemeId eq parentId }.count()
+            } else {
+                Themes.selectAll().where { (Themes.courseId eq courseUuid) and Themes.parentThemeId.isNull() }.count()
+            }
+            siblingCount + 1
+        }).toInt()
+
         val newId = Themes.insertAndGetId {
             it[name] = request.name
             it[description] = request.description
             it[courseId] = EntityID(courseUuid, Courses)
             it[parentThemeId] = parentId?.let { pid -> EntityID(pid, Themes) }
-            request.position?.let { pos -> it[position] = pos }
+            it[position] = pos
         }
 
         Themes.selectAll().where { Themes.id eq newId }.single().toTheme()
