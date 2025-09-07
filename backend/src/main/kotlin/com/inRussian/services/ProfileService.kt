@@ -5,6 +5,7 @@ import com.inRussian.models.users.SystemLanguage
 import com.inRussian.models.users.UserLanguageSkill
 import com.inRussian.models.users.UserProfile
 import com.inRussian.models.users.UserRole
+import com.inRussian.models.v2.UserEnrichedProfile
 import com.inRussian.repositories.StaffProfileRepository
 import com.inRussian.repositories.UserProfileRepository
 import com.inRussian.repositories.UserRepository
@@ -215,6 +216,48 @@ class ProfileService(
         val profile = userProfileRepository.findByUserId(userId)
             ?: return Result.failure(Exception("User profile not found"))
         return Result.success(profile)
+    }
+    suspend fun getUserEnrichedProfile(
+        currentUserId: String,
+        currentUserRole: UserRole,
+        targetUserId: String? = null
+    ): Result<UserEnrichedProfile> {
+        val userId = targetUserId ?: currentUserId
+
+        if (!canRead(currentUserRole, currentUserId, userId)) {
+            return Result.failure(Exception("Access denied"))
+        }
+
+        val profile = userProfileRepository.findByUserId(userId)
+            ?: return Result.failure(Exception("User profile not found"))
+        val user = userRepository.findById(userId)
+            ?: return Result.failure(Exception("User not found"))
+        val skills = userProfileRepository.getSkills(userId)
+
+        val enriched = UserEnrichedProfile(
+            userId = profile.userId,
+            surname = profile.surname,
+            name = profile.name,
+            patronymic = profile.patronymic,
+            gender = profile.gender,
+            dob = profile.dob,
+            dor = profile.dor,
+            citizenship = profile.citizenship,
+            nationality = profile.nationality,
+            countryOfResidence = profile.countryOfResidence,
+            cityOfResidence = profile.cityOfResidence,
+            countryDuringEducation = profile.countryDuringEducation,
+            periodSpent = profile.periodSpent,
+            kindOfActivity = profile.kindOfActivity,
+            education = profile.education,
+            purposeOfRegister = profile.purposeOfRegister,
+            avatarId = user.avatarId,
+            email = user.email,
+            systemLanguage = user.systemLanguage,
+            phone = user.phone,
+            languageSkills = skills
+        )
+        return Result.success(enriched)
     }
 
     suspend fun getStaffProfile(

@@ -2,14 +2,12 @@ package com.inRussian.services
 
 import com.inRussian.models.content.*
 import com.inRussian.repositories.*
-
 interface StudentService {
     suspend fun getCoursesByUserLanguage(userId: String): Result<List<Course>>
     suspend fun enrollInCourse(userId: String, courseId: String): Result<Boolean>
     suspend fun getUserEnrollments(userId: String): Result<List<UserCourseEnrollmentItem>>
     suspend fun unenrollFromCourse(userId: String, courseId: String): Result<Boolean>
     suspend fun getCourseEnrollment(userId: String, courseId: String): Result<UserCourseEnrollmentItem?>
-
 
 }
 

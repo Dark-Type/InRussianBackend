@@ -15,6 +15,7 @@ import io.ktor.server.auth.jwt.*
 import io.ktor.server.request.*
 import io.ktor.server.routing.*
 import org.slf4j.LoggerFactory
+import kotlin.text.get
 
 
 private val logger = LoggerFactory.getLogger("ProfileRoutes")
@@ -65,6 +66,29 @@ fun Route.profileRoutes(profileService: ProfileService) {
                         call.respond(
                             statusCode,
                             ErrorResponse(error = result.exceptionOrNull()?.message ?: "Failed to create profile")
+                        )
+                    }
+                }
+                get("/enriched") {
+                    val principal = call.principal<JWTPrincipal>()!!
+                    val userId = principal.getUserId()
+                        ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val userRole = principal.getUserRole()
+                        ?: return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
+                    val targetUserId = call.request.queryParameters["targetUserId"]
+
+                    val result = profileService.getUserEnrichedProfile(userId, userRole, targetUserId)
+
+                    if (result.isSuccess) {
+                        call.respond(HttpStatusCode.OK, result.getOrNull()!!)
+                    } else {
+                        val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
+                            HttpStatusCode.Forbidden
+                        } else {
+                            HttpStatusCode.NotFound
+                        }
+                        call.respond(
+                            statusCode, ErrorResponse(error = result.exceptionOrNull()?.message ?: "Profile not found")
                         )
                     }
                 }
@@ -379,17 +403,14 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     val userId = principal.getUserId()
                     val userRole = principal.getUserRole()
 
-                    logger.info("GET /profiles/staff - UserId: $userId, UserRole: $userRole")
 
                     if (userId == null || userRole == null) {
-                        logger.warn("Invalid token - userId: $userId, userRole: $userRole")
                         return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     }
 
                     val result = profileService.getStaffProfile(userId, userRole)
 
                     if (result.isSuccess) {
-                        logger.info("Staff profile retrieved successfully for user: $userId")
                         call.respond(
                             HttpStatusCode.OK,
                             StaffProfileResponse(
@@ -398,7 +419,6 @@ fun Route.profileRoutes(profileService: ProfileService) {
                             )
                         )
                     } else {
-                        logger.error("Failed to get staff profile for user: $userId, error: ${result.exceptionOrNull()?.message}")
                         val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
                             HttpStatusCode.Forbidden
                         } else {
@@ -448,15 +468,12 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     val currentUserRole = principal.getUserRole()
                     val targetUserId = call.parameters["id"]
 
-                    logger.info("GET /profiles/staff/{id} - currentUserId: $currentUserId, currentUserRole: $currentUserRole, targetUserId: $targetUserId")
 
                     if (currentUserId == null || currentUserRole == null) {
-                        logger.warn("Invalid token - currentUserId: $currentUserId, currentUserRole: $currentUserRole")
                         return@get call.respond(HttpStatusCode.Unauthorized, "Invalid token")
                     }
 
                     if (targetUserId == null) {
-                        logger.warn("Missing user ID in path")
                         call.respond(HttpStatusCode.BadRequest, ErrorResponse(error = "Missing user ID"))
                         return@get
                     }
@@ -464,7 +481,6 @@ fun Route.profileRoutes(profileService: ProfileService) {
                     val result = profileService.getStaffProfile(currentUserId, currentUserRole, targetUserId)
 
                     if (result.isSuccess) {
-                        logger.info("Staff profile retrieved successfully - currentUserId: $currentUserId, targetUserId: $targetUserId")
                         call.respond(
                             HttpStatusCode.OK,
                             StaffProfileResponse(
@@ -473,7 +489,6 @@ fun Route.profileRoutes(profileService: ProfileService) {
                             )
                         )
                     } else {
-                        logger.error("Failed to get staff profile - currentUserId: $currentUserId, targetUserId: $targetUserId, error: ${result.exceptionOrNull()?.message}")
                         val statusCode = if (result.exceptionOrNull()?.message == "Access denied") {
                             HttpStatusCode.Forbidden
                         } else {

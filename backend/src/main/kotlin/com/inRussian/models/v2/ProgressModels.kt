@@ -2,6 +2,10 @@ package com.inRussian.models.v2
 
 
 import com.inRussian.models.tasks.TaskBody
+import com.inRussian.models.users.Gender
+import com.inRussian.models.users.PeriodSpent
+import com.inRussian.models.users.SystemLanguage
+import com.inRussian.models.users.UserLanguageSkill
 import kotlinx.serialization.KSerializer
 import java.time.Instant
 import java.util.UUID
@@ -66,6 +70,30 @@ data class SolveResult(
 data class NextTaskResult(
     @Serializable(with = UUIDSerializer::class) val taskId: UUID,
     @Serializable(with = UUIDSerializer::class) val themeId: UUID
+)
+@Serializable
+data class UserEnrichedProfile(
+    val userId: String,
+    val surname: String,
+    val name: String,
+    val patronymic: String? = null,
+    val gender: Gender,
+    val dob: String,
+    val dor: String,
+    val citizenship: String? = null,
+    val nationality: String? = null,
+    val countryOfResidence: String? = null,
+    val cityOfResidence: String? = null,
+    val countryDuringEducation: String? = null,
+    val periodSpent: PeriodSpent? = null,
+    val kindOfActivity: String? = null,
+    val education: String? = null,
+    val purposeOfRegister: String? = null,
+    val avatarId: String? = null,
+    val email: String,
+    val systemLanguage: SystemLanguage,
+    val phone: String? = null,
+    val languageSkills: List<UserLanguageSkill> = emptyList()
 )
 
 @Serializable

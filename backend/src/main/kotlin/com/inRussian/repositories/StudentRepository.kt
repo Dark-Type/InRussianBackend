@@ -10,22 +10,6 @@ import java.util.*
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
-interface StudentRepository {
-
-
-    // UserCourseEnrollments CRUD
-    suspend fun enrollInCourse(userId: String, courseId: String): Boolean
-    suspend fun getUserEnrollments(userId: String): List<UserCourseEnrollmentItem>
-    suspend fun unenrollFromCourse(userId: String, courseId: String): Boolean
-    suspend fun getCourseEnrollment(userId: String, courseId: String): UserCourseEnrollmentItem?
-
-    // Content Gets
-    suspend fun getCoursesByUserLanguage(userId: String): List<Course>
-
-
-
-}
-
 @Serializable
 data class CreateTaskQueueRequest(
     val userId: String,
@@ -46,19 +30,6 @@ data class UpdateTaskProgressRequest(
     val shouldRetryAfterTasks: Int? = null
 )
 
-@Serializable
-data class UserTaskQueueItem(
-    val id: String,
-    val userId: String,
-    val taskId: String,
-    val themeId: String,
-    val sectionId: String,
-    val queuePosition: Int,
-    val isOriginalTask: Boolean,
-    val isRetryTask: Boolean,
-    val originalTaskId: String?,
-    val createdAt: String
-)
 
 @Serializable
 data class UserTaskProgressItem(
@@ -89,13 +60,23 @@ data class SectionProgressItem(
     val progressPercentage: Double
 )
 
-data class CourseProgressItem(
-    val courseId: String,
-    val totalTasks: Int,
-    val completedTasks: Int,
-    val progressPercentage: Double,
-    val sectionsProgress: List<SectionProgressItem>
-)
+
+interface StudentRepository {
+
+
+    // UserCourseEnrollments CRUD
+    suspend fun enrollInCourse(userId: String, courseId: String): Boolean
+    suspend fun getUserEnrollments(userId: String): List<UserCourseEnrollmentItem>
+    suspend fun unenrollFromCourse(userId: String, courseId: String): Boolean
+    suspend fun getCourseEnrollment(userId: String, courseId: String): UserCourseEnrollmentItem?
+
+    // Content Gets
+    suspend fun getCoursesByUserLanguage(userId: String): List<Course>
+
+
+}
+
+
 
 class ExposedStudentRepository : StudentRepository {
 

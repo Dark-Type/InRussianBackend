@@ -4,10 +4,19 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class TaskType {
-    LISTEN_AND_CHOOSE,
-    READ_AND_CHOOSE,
-    LOOK_AND_CHOOSE,
-    MATCH_AUDIO_TEXT,
-    MATCH_TEXT_TEXT,
-    WRITE, LISTEN, READ, SPEAK, REMIND, MARK, FILL, CONNECT_AUDIO, CONNECT_IMAGE, CONNECT_TRANSLATE, SELECT
+    WRITE, // Write.svg Пишите
+    LISTEN, // Listen.svg Слушайте
+    READ, // Read.svg Читайте
+    SPEAK, // Speak.svg Говорите
+    REPEAT, // Repeat.svg Повторяйте
+    REMIND, // Remember.svg Запоминайте
+    MARK, // PickRightWords.svg Выберите правильные слова
+    FILL, // FillInTheBlanks.svg Заполните пропуски
+    CONNECT_AUDIO, // ConnectAudioToTranslation.svg Соедините аудио с переводом
+    CONNECT_IMAGE, // ConnectImageToText.svg Соедините изображение с текстом
+    CONNECT_TRANSLATE, // ConnectTranslationToWord.svg Соедините перевод со словом
+    SELECT, // ChooseRightVariant.svg Выберите правильный вариант
+    TASK, // Task.svg Задание
+    QUESTION, // Question.svg Что это?
+    SET_THE_STRESS // SetTheStress.svg
 }
