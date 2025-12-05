@@ -1,6 +1,7 @@
 package com.inRussian.repositories.v2
 
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.tables.TaskEntity
 import com.inRussian.tables.Themes
 import com.inRussian.tables.v2.UserCourseProgressTable
@@ -21,7 +22,7 @@ class ProgressRepository {
     private val taskIdCol = TaskEntity.id
     private val taskThemeIdCol = TaskEntity.themeId
 
-    suspend fun getThemeProgress(userId: UUID, themeId: UUID): ResultRow? = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun getThemeProgress(userId: UUID, themeId: UUID): ResultRow? = dbQuery {
         UserThemeProgressTable
             .selectAll()
             .where { (UserThemeProgressTable.userId eq userId) and (UserThemeProgressTable.themeId eq themeId) }
@@ -29,7 +30,7 @@ class ProgressRepository {
             .firstOrNull()
     }
 
-    suspend fun getCourseProgress(userId: UUID, courseId: UUID): ResultRow? = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun getCourseProgress(userId: UUID, courseId: UUID): ResultRow? = dbQuery {
         UserCourseProgressTable
             .selectAll()
             .where { (UserCourseProgressTable.userId eq userId) and (UserCourseProgressTable.courseId eq courseId) }
@@ -39,13 +40,13 @@ class ProgressRepository {
 
     // Totals
 
-    suspend fun computeThemeTotalTasks(themeId: UUID): Int = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun computeThemeTotalTasks(themeId: UUID): Int = dbQuery {
         TaskEntity
             .selectAll().where { taskThemeIdCol eq themeId }
             .count().toInt()
     }
 
-    suspend fun computeCourseTotalTasks(courseId: UUID): Int = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun computeCourseTotalTasks(courseId: UUID): Int = dbQuery {
         TaskEntity.join(Themes, JoinType.INNER, taskThemeIdCol, themeIdCol)
             .selectAll().where { themeCourseIdCol eq courseId }
             .count().toInt()
@@ -59,7 +60,7 @@ class ProgressRepository {
         courseId: UUID,
         firstTryTimeMs: Long,
         eventTime: Instant = Instant.now()
-    ) = newSuspendedTransaction(Dispatchers.IO) {
+    ) = dbQuery {
         val total = computeThemeTotalTasks(themeId)
         val inserted = UserThemeProgressTable.insertIgnore {
             it[UserThemeProgressTable.userId] = userId
@@ -107,7 +108,7 @@ class ProgressRepository {
         courseId: UUID,
         firstTryTimeMs: Long,
         eventTime: Instant = Instant.now()
-    ) = newSuspendedTransaction(Dispatchers.IO) {
+    ) = dbQuery {
         val total = computeCourseTotalTasks(courseId)
         val inserted = UserCourseProgressTable.insertIgnore {
             it[UserCourseProgressTable.userId] = userId

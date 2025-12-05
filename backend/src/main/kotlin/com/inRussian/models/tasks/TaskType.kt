@@ -18,5 +18,6 @@ enum class TaskType {
     SELECT, // ChooseRightVariant.svg Выберите правильный вариант
     TASK, // Task.svg Задание
     QUESTION, // Question.svg Что это?
-    SET_THE_STRESS // SetTheStress.svg
+    SET_THE_STRESS, // SetTheStress.svg
+    CONTENT_BLOCKS // ContentBlocks.svg
 }

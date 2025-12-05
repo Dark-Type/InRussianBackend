@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.models.media.FileType
 import com.inRussian.models.media.MediaFileMeta
 import com.inRussian.tables.MediaFiles
@@ -22,7 +23,7 @@ class MediaRepository(baseDir: String = "media") {
         File(contentDir).mkdirs()
     }
 
-    fun saveMedia(
+    suspend fun saveMedia(
         fileName: String,
         mimeType: String,
         fileType: FileType,
@@ -47,9 +48,10 @@ class MediaRepository(baseDir: String = "media") {
         val safeFileName = "$mediaId.$ext"
         val dir = if (fileType == FileType.AVATAR) avatarsDir else contentDir
         val filePath = "$dir/$safeFileName"
+
         File(filePath).writeBytes(fileBytes)
 
-        val uploadedAt = transaction {
+        val uploadedAt = dbQuery {
             MediaFiles.insert {
                 it[id] = mediaId
                 it[MediaFiles.fileName] = fileName
@@ -72,10 +74,10 @@ class MediaRepository(baseDir: String = "media") {
         )
     }
 
-    fun getMedia(mediaId: UUID): Pair<MediaFileMeta, File>? {
-        val meta = transaction {
+    suspend fun getMedia(mediaId: UUID): Pair<MediaFileMeta, File>? {
+        val meta = dbQuery {
             MediaFiles.selectAll().where {
-                (MediaFiles.id eq mediaId) and (isActive eq true)
+                (MediaFiles.id eq mediaId) and (MediaFiles.isActive eq true)
             }.singleOrNull()?.let {
                 MediaFileMeta(
                     mediaId = it[MediaFiles.id].toString(),
@@ -103,11 +105,11 @@ class MediaRepository(baseDir: String = "media") {
         }
     }
 
-    fun findUserAvatar(userId: UUID): MediaFileMeta? = transaction {
+    suspend fun findUserAvatar(userId: UUID): MediaFileMeta? = dbQuery {
         MediaFiles.selectAll().where {
             (MediaFiles.fileType eq FileType.AVATAR.toString()) and
                     (MediaFiles.uploadedBy eq userId) and
-                    (isActive eq true)
+                    (MediaFiles.isActive eq true)
         }.singleOrNull()?.let {
             MediaFileMeta(
                 mediaId = it[MediaFiles.id].toString(),
@@ -121,27 +123,31 @@ class MediaRepository(baseDir: String = "media") {
         }
     }
 
-    fun deleteMedia(mediaId: UUID): Boolean {
-        val meta = transaction {
+    suspend fun deleteMedia(mediaId: UUID): Boolean {
+        val meta = dbQuery {
             MediaFiles.selectAll().where {
-                (MediaFiles.id eq mediaId) and (isActive eq true)
+                (MediaFiles.id eq mediaId) and (MediaFiles.isActive eq true)
             }.singleOrNull()
         } ?: return false
 
         val fileType = FileType.valueOf(meta[MediaFiles.fileType])
         val dir = if (fileType == FileType.AVATAR) avatarsDir else contentDir
         val file = findFileByMediaId(dir, mediaId)
+
+        // Delete physical file (I/O operation)
         val deleted = file?.delete() ?: false
 
-        transaction {
+        // Mark as inactive in database
+        dbQuery {
             MediaFiles.update({ MediaFiles.id eq mediaId }) {
                 it[isActive] = false
             }
         }
+
         return deleted
     }
 
-    fun updateMedia(
+    suspend fun updateMedia(
         mediaId: UUID,
         fileName: String,
         mimeType: String,
@@ -151,6 +157,8 @@ class MediaRepository(baseDir: String = "media") {
         val oldMeta = getMeta(mediaId) ?: throw Exception("Файл не найден")
         val dir = if (oldMeta.fileType == FileType.AVATAR) avatarsDir else contentDir
         val oldFile = findFileByMediaId(dir, mediaId)
+
+        // Delete old file (I/O operation)
         oldFile?.delete()
 
         val ext = File(fileName).extension.ifEmpty {
@@ -167,10 +175,12 @@ class MediaRepository(baseDir: String = "media") {
                 else -> "bin"
             }
         }
+
+        // Write new file (I/O operation)
         val newFile = File("$dir/$mediaId.$ext")
         newFile.writeBytes(fileBytes)
 
-        transaction {
+        dbQuery {
             MediaFiles.update({ MediaFiles.id eq mediaId }) {
                 it[MediaFiles.fileName] = fileName
                 it[MediaFiles.mimeType] = mimeType
@@ -182,9 +192,9 @@ class MediaRepository(baseDir: String = "media") {
         return getMeta(mediaId)!!
     }
 
-    fun getMeta(mediaId: UUID): MediaFileMeta? = transaction {
+    suspend fun getMeta(mediaId: UUID): MediaFileMeta? = dbQuery {
         MediaFiles.selectAll().where {
-            (MediaFiles.id eq mediaId) and (isActive eq true)
+            (MediaFiles.id eq mediaId) and (MediaFiles.isActive eq true)
         }.singleOrNull()?.let {
             MediaFileMeta(
                 mediaId = it[MediaFiles.id].toString(),

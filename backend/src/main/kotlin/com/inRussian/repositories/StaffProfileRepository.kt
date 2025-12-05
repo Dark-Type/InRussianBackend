@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.dbQuery
 import com.inRussian.models.users.StaffProfile
 import com.inRussian.tables.StaffProfiles
 import org.jetbrains.exposed.sql.ResultRow
@@ -27,13 +28,13 @@ class ExposedStaffProfileRepository : StaffProfileRepository {
         patronymic = this[StaffProfiles.patronymic]
     )
 
-    override suspend fun findByUserId(userId: String): StaffProfile? = transaction {
+    override suspend fun findByUserId(userId: String): StaffProfile? = dbQuery {
         StaffProfiles.selectAll().where { StaffProfiles.userId eq UUID.fromString(userId) }
             .map { it.toStaffProfile() }
             .firstOrNull()
     }
 
-    override suspend fun create(profile: StaffProfile): StaffProfile = transaction {
+    override suspend fun create(profile: StaffProfile): StaffProfile = dbQuery {
         StaffProfiles.insert {
             it[StaffProfiles.userId] = UUID.fromString(profile.userId)
             it[StaffProfiles.name] = profile.name
@@ -43,7 +44,7 @@ class ExposedStaffProfileRepository : StaffProfileRepository {
         profile
     }
 
-    override suspend fun update(profile: StaffProfile): StaffProfile = transaction {
+    override suspend fun update(profile: StaffProfile): StaffProfile = dbQuery {
         StaffProfiles.update({ StaffProfiles.userId eq UUID.fromString(profile.userId) }) {
             it[StaffProfiles.name] = profile.name
             it[StaffProfiles.surname] = profile.surname
@@ -52,7 +53,7 @@ class ExposedStaffProfileRepository : StaffProfileRepository {
         profile
     }
 
-    override suspend fun deleteByUserId(userId: String): Boolean = transaction {
+    override suspend fun deleteByUserId(userId: String): Boolean = dbQuery {
         StaffProfiles.deleteWhere { StaffProfiles.userId eq UUID.fromString(userId) } > 0
     }
 }

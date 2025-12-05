@@ -5,6 +5,7 @@ import com.inRussian.models.users.UserRole
 import com.inRussian.models.users.UserStatus
 import com.inRussian.repositories.AdminRepository
 import com.inRussian.repositories.UserRepository
+import com.inRussian.repositories.v2.RetrySwitchRepository
 import com.inRussian.requests.admin.UpdateUserRequest
 import com.inRussian.requests.users.StaffRegisterRequest
 import com.inRussian.responses.auth.LoginResponse
@@ -15,7 +16,7 @@ import java.time.LocalDate
 class AdminService(
     private val adminRepository: AdminRepository,
     private val userRepository: UserRepository,
-    private val authService: AuthService
+    private val authService: AuthService,
 ) {
 
     suspend fun getAllUsers(

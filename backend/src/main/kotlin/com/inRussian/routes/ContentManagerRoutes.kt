@@ -10,6 +10,7 @@ import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import kotlin.text.get
 
 
 fun Route.contentManagerRoutes(contentService: ContentService) {
@@ -66,6 +67,40 @@ fun Route.contentManagerRoutes(contentService: ContentService) {
             }
 
             route("/courses") {
+                get("/{courseId}/export") {
+                    val courseId = call.parameters["courseId"]!!
+                    val since = call.request.queryParameters["since"] // ISO-8601 UTC
+                    val res = contentService.exportCourseJson(courseId, since)
+                    if (res.isSuccess) call.respondText(res.getOrThrow(), ContentType.Application.Json)
+                    else call.respond(HttpStatusCode.BadRequest, res.exceptionOrNull()?.message ?: "Export failed")
+                }
+                post("/import") {
+                    val targetCourseId = call.request.queryParameters["targetCourseId"]
+                    val createIfMissing =
+                        call.request.queryParameters["createIfMissing"]?.toBooleanStrictOrNull() ?: true
+                    val languageOverride = call.request.queryParameters["language"]
+                    val addOnly = call.request.queryParameters["addOnly"]?.toBooleanStrictOrNull() ?: true
+                    val json = call.receiveText()
+                    val res = contentService.importCourseJson(
+                        json,
+                        targetCourseId,
+                        createIfMissing,
+                        languageOverride,
+                        addOnly
+                    )
+                    if (res.isSuccess) call.respond(HttpStatusCode.OK, res.getOrThrow())
+                    else call.respond(HttpStatusCode.BadRequest, res.exceptionOrNull()?.message ?: "Import failed")
+                }
+                post("/{sourceCourseId}/clone-structure") {
+                    val sourceCourseId = call.parameters["sourceCourseId"]!!
+                    val params = call.receiveParameters()
+                    val newLang =
+                        params["language"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing language")
+                    val newName = params["name"] ?: return@post call.respond(HttpStatusCode.BadRequest, "Missing name")
+                    val res = contentService.cloneCourseStructure(sourceCourseId, newLang, newName)
+                    if (res.isSuccess) call.respond(HttpStatusCode.Created, res.getOrThrow())
+                    else call.respond(HttpStatusCode.BadRequest, res.exceptionOrNull()?.message ?: "Clone failed")
+                }
                 post {
                     val principal = call.principal<JWTPrincipal>()
                     val userId = principal?.getUserId()

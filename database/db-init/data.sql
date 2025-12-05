@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict Rb9OGCLiKT5Yc6tODObi5Ytm1P65imvpTz2txG1dICkCGqzYDqbHLD0VEdc9nWw
+\restrict cfcFE9Xzd790nd3RLax6GjD66w0SPiYeaZWibtHfRxodEhocdCiXGcfGShK8VqY
 
 -- Dumped from database version 16.4 (Postgres.app)
 -- Dumped by pg_dump version 16.10 (Homebrew)
@@ -74,6 +74,14 @@ f3c9f222-4432-4b2a-97a7-77e5adf7271b	Тест		78bb65b3-b284-424a-8e43-a9beedb14
 --
 
 COPY public.course_statistics (course_id, students_enrolled, students_completed, students_active_last_7_days, total_tasks_completed, total_time_spent_seconds, total_attempts, total_correct_answers, average_completion_time_seconds, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: password_recovery_tokens; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.password_recovery_tokens (email, token_hash, expires_at, created_at) FROM stdin;
 \.
 
 
@@ -172,6 +180,30 @@ aadaa52e-bf1a-45b4-96ba-d833f5b9a1f4	fb6e6abf-08e6-41c4-b9c3-591ab4cd5e33	TEXT	\
 
 
 --
+-- Data for Name: task_entity; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.task_entity (id, course_id, task_body, created_at, updated_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: task_types; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.task_types (name) FROM stdin;
+\.
+
+
+--
+-- Data for Name: task_to_types; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.task_to_types (task_id, type_name) FROM stdin;
+\.
+
+
+--
 -- Data for Name: user_badges; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -242,5 +274,5 @@ COPY public.user_task_queue (id, user_id, task_id, theme_id, section_id, queue_p
 -- PostgreSQL database dump complete
 --
 
-\unrestrict Rb9OGCLiKT5Yc6tODObi5Ytm1P65imvpTz2txG1dICkCGqzYDqbHLD0VEdc9nWw
+\unrestrict cfcFE9Xzd790nd3RLax6GjD66w0SPiYeaZWibtHfRxodEhocdCiXGcfGShK8VqY
 

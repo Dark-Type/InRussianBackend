@@ -1,6 +1,7 @@
 package com.inRussian.repositories.v2
 
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.models.v2.AttemptInsert
 import com.inRussian.models.v2.AttemptRecord
 import com.inRussian.tables.v2.UserTaskAttemptTable
@@ -22,7 +23,7 @@ import java.time.ZoneOffset
 
 class AttemptRepository {
 
-    suspend fun insertAttemptIfNew(a: AttemptInsert): Boolean = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun insertAttemptIfNew(a: AttemptInsert): Boolean = dbQuery {
         val inserted = UserTaskAttemptTable.insertIgnore {
             it[id] = a.attemptId
             it[userId] = a.userId
@@ -38,7 +39,7 @@ class AttemptRepository {
         inserted > 0
     }
 
-    suspend fun findAttemptById(attemptId: UUID): AttemptRecord? = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun findAttemptById(attemptId: UUID): AttemptRecord? = dbQuery {
         UserTaskAttemptTable
             .selectAll()
             .where { UserTaskAttemptTable.id eq attemptId }
@@ -48,7 +49,7 @@ class AttemptRepository {
     }
 
     suspend fun getUserAttemptsByTheme(userId: UUID, themeId: UUID): List<AttemptRecord> =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             UserTaskAttemptTable
                 .selectAll()
                 .where {

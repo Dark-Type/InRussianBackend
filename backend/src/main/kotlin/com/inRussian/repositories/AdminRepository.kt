@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.models.users.User
 import com.inRussian.models.users.UserRole
 import com.inRussian.models.users.UserProfile
@@ -78,7 +79,7 @@ class ExposedAdminRepository(
         createdTo: LocalDate?,
         sortBy: String,
         sortOrder: String
-    ): List<User> = transaction {
+    ): List<User> = dbQuery {
         val query = Users.selectAll()
 
         if (role != null) {
@@ -113,7 +114,7 @@ class ExposedAdminRepository(
     }
 
     override suspend fun getUsersCount(role: UserRole?, createdFrom: LocalDate?, createdTo: LocalDate?): Long =
-        transaction {
+        dbQuery {
             val query = Users.selectAll()
 
             if (role != null) {
@@ -131,7 +132,7 @@ class ExposedAdminRepository(
             query.count()
         }
 
-    override suspend fun updateUser(userId: String, request: UpdateUserRequest): User? = transaction {
+    override suspend fun updateUser(userId: String, request: UpdateUserRequest): User? = dbQuery {
         val userUuid = UUID.fromString(userId)
 
         Users.update({ Users.id eq userUuid }) {
@@ -147,19 +148,19 @@ class ExposedAdminRepository(
             .singleOrNull()?.toUser()
     }
 
-    override suspend fun getStudentsCountByCourse(courseId: String): Long = transaction {
+    override suspend fun getStudentsCountByCourse(courseId: String): Long = dbQuery {
         UserCourseEnrollments.selectAll()
             .where { UserCourseEnrollments.courseId eq UUID.fromString(courseId) }
             .count()
     }
 
-    override suspend fun getOverallStudentsCount(): Long = transaction {
+    override suspend fun getOverallStudentsCount(): Long = dbQuery {
         Users.selectAll()
             .where { Users.role eq UserRole.STUDENT }
             .count()
     }
 
-    override suspend fun getCourseAverageTime(courseId: String): Long? = transaction {
+    override suspend fun getCourseAverageTime(courseId: String): Long? = dbQuery {
         UserCourseStatistics.selectAll()
             .where { UserCourseStatistics.courseId eq UUID.fromString(courseId) }
             .map { it[UserCourseStatistics.timeSpentSeconds] }
@@ -168,7 +169,7 @@ class ExposedAdminRepository(
             ?.toLong()
     }
 
-    override suspend fun getCourseAverageProgress(courseId: String): Double? = transaction {
+    override suspend fun getCourseAverageProgress(courseId: String): Double? = dbQuery {
         val progressList = UserCourseStatistics.selectAll()
             .where { UserCourseStatistics.courseId eq UUID.fromString(courseId) }
             .map { it[UserCourseStatistics.progressPercentage].toDouble() }
@@ -180,7 +181,7 @@ class ExposedAdminRepository(
         }
     }
 
-    override suspend fun getOverallAverageTime(): Long? = transaction {
+    override suspend fun getOverallAverageTime(): Long? = dbQuery {
         UserStatistics.selectAll()
             .map { it[UserStatistics.totalTimeSpentSeconds] }
             .takeIf { it.isNotEmpty() }
@@ -188,7 +189,7 @@ class ExposedAdminRepository(
             ?.toLong()
     }
 
-    override suspend fun getOverallAverageProgress(): Double? = transaction {
+    override suspend fun getOverallAverageProgress(): Double? = dbQuery {
         val userStats = UserStatistics.selectAll().map { row ->
             val totalTasks = row[UserStatistics.totalTasksAttempted]
             val completedTasks = row[UserStatistics.totalTasksCompleted]
@@ -304,7 +305,7 @@ class ExposedAdminRepository(
         return staffProfileRepository.deleteByUserId(userId)
     }
 
-    override suspend fun getStudentsByCourseId(courseId: String): List<User> = transaction {
+    override suspend fun getStudentsByCourseId(courseId: String): List<User> = dbQuery {
         val enrolledUserIds = UserCourseEnrollments
             .selectAll()
             .where { UserCourseEnrollments.courseId eq UUID.fromString(courseId) }
@@ -320,7 +321,7 @@ class ExposedAdminRepository(
     }
 
     override suspend fun getAllStudentsWithProfiles(page: Int, size: Int): List<Pair<User, UserProfile?>> =
-        transaction {
+        dbQuery {
             val students = Users.selectAll()
                 .where { Users.role eq UserRole.STUDENT }
                 .limit(size)

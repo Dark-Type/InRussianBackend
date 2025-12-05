@@ -12,6 +12,13 @@ sealed interface TaskBody {
         val variant: List<Pair<String, String>>
     ) : TaskBody
 
+    @SerialName("ContentBlocks")
+    @Serializable
+    data class ContentBlocks(
+        val items: List<ContentItem>
+    ) : TaskBody
+
+
     @SerialName("AudioTask")
     @Serializable
     data class AudioConnectTask( val variant: List<Pair<String, String>>) : TaskBody
@@ -114,4 +121,16 @@ data class ImageBlocks(
     val description: String?,
     val image: String,
     val descriptionTranslate: String?,
+)
+@Serializable
+enum class ContentKind {
+    TEXT, IMAGE, AUDIO
+}
+@Serializable
+data class ContentItem(
+    val kind: ContentKind,
+    val text: String? = null,
+    val imageUrl: String? = null,
+    val audioUrl: String? = null,
+    val caption: String? = null
 )

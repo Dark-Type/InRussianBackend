@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.dbQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.deleteWhere
@@ -32,7 +33,7 @@ interface PasswordRecoveryTokenRepository {
 
 class ExposedPasswordRecoveryTokenRepository : PasswordRecoveryTokenRepository {
 
-    override suspend fun issue(email: String, ttlMinutes: Long): String = transaction {
+    override suspend fun issue(email: String, ttlMinutes: Long): String = dbQuery {
         // Ensure only one active token per email
         PasswordRecoveryTokens.deleteWhere { PasswordRecoveryTokens.email eq email.lowercase() }
 
@@ -49,30 +50,30 @@ class ExposedPasswordRecoveryTokenRepository : PasswordRecoveryTokenRepository {
         code
     }
 
-    override suspend fun check(email: String, token: String): RecoveryCheckResult = transaction {
+    override suspend fun check(email: String, token: String): RecoveryCheckResult = dbQuery {
         val row = PasswordRecoveryTokens
             .selectAll()
             .where { PasswordRecoveryTokens.email eq email.lowercase() }
-            .firstOrNull() ?: return@transaction RecoveryCheckResult.NOT_FOUND
+            .firstOrNull() ?: return@dbQuery RecoveryCheckResult.NOT_FOUND
 
         if (Instant.now().isAfter(row[PasswordRecoveryTokens.expiresAt])) {
             PasswordRecoveryTokens.deleteWhere { PasswordRecoveryTokens.email eq email.lowercase() }
-            return@transaction RecoveryCheckResult.EXPIRED
+            return@dbQuery RecoveryCheckResult.EXPIRED
         }
 
         val ok = BCrypt.checkpw(token, row[PasswordRecoveryTokens.tokenHash])
         if (ok) RecoveryCheckResult.VALID else RecoveryCheckResult.INVALID
     }
 
-    override suspend fun verifyAndConsume(email: String, token: String): RecoveryCheckResult = transaction {
+    override suspend fun verifyAndConsume(email: String, token: String): RecoveryCheckResult = dbQuery {
         val row = PasswordRecoveryTokens
             .selectAll()
             .where { PasswordRecoveryTokens.email eq email.lowercase() }
-            .firstOrNull() ?: return@transaction RecoveryCheckResult.NOT_FOUND
+            .firstOrNull() ?: return@dbQuery RecoveryCheckResult.NOT_FOUND
 
         if (Instant.now().isAfter(row[PasswordRecoveryTokens.expiresAt])) {
             PasswordRecoveryTokens.deleteWhere { PasswordRecoveryTokens.email eq email.lowercase() }
-            return@transaction RecoveryCheckResult.EXPIRED
+            return@dbQuery RecoveryCheckResult.EXPIRED
         }
 
         val ok = BCrypt.checkpw(token, row[PasswordRecoveryTokens.tokenHash])
@@ -84,7 +85,7 @@ class ExposedPasswordRecoveryTokenRepository : PasswordRecoveryTokenRepository {
         }
     }
 
-    override suspend fun consume(email: String): Boolean = transaction {
+    override suspend fun consume(email: String): Boolean = dbQuery {
         PasswordRecoveryTokens.deleteWhere { PasswordRecoveryTokens.email eq email.lowercase() } > 0
     }
 

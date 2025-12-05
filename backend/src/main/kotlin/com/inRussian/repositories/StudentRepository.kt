@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.dbQuery
 import com.inRussian.models.content.*
 import com.inRussian.models.progress.*
 import com.inRussian.tables.*
@@ -77,7 +78,6 @@ interface StudentRepository {
 }
 
 
-
 class ExposedStudentRepository : StudentRepository {
 
 
@@ -104,7 +104,7 @@ class ExposedStudentRepository : StudentRepository {
     )
 
     // UserCourseEnrollments CRUD
-    override suspend fun enrollInCourse(userId: String, courseId: String): Boolean = transaction {
+    override suspend fun enrollInCourse(userId: String, courseId: String): Boolean = dbQuery {
         try {
             UserCourseEnrollments.insert {
                 it[UserCourseEnrollments.userId] = UUID.fromString(userId)
@@ -117,14 +117,14 @@ class ExposedStudentRepository : StudentRepository {
         }
     }
 
-    override suspend fun getUserEnrollments(userId: String): List<UserCourseEnrollmentItem> = transaction {
+    override suspend fun getUserEnrollments(userId: String): List<UserCourseEnrollmentItem> = dbQuery {
         UserCourseEnrollments.selectAll()
             .where { UserCourseEnrollments.userId eq UUID.fromString(userId) }
             .orderBy(UserCourseEnrollments.enrolledAt, SortOrder.DESC)
             .map { it.toUserCourseEnrollment() }
     }
 
-    override suspend fun unenrollFromCourse(userId: String, courseId: String): Boolean = transaction {
+    override suspend fun unenrollFromCourse(userId: String, courseId: String): Boolean = dbQuery {
         UserCourseEnrollments.deleteWhere {
             (UserCourseEnrollments.userId eq UUID.fromString(userId)) and
                     (UserCourseEnrollments.courseId eq UUID.fromString(courseId))
@@ -132,7 +132,7 @@ class ExposedStudentRepository : StudentRepository {
     }
 
     override suspend fun getCourseEnrollment(userId: String, courseId: String): UserCourseEnrollmentItem? =
-        transaction {
+        dbQuery {
             UserCourseEnrollments.selectAll()
                 .where {
                     (UserCourseEnrollments.userId eq UUID.fromString(userId)) and
@@ -142,10 +142,10 @@ class ExposedStudentRepository : StudentRepository {
         }
 
     // Content Gets
-    override suspend fun getCoursesByUserLanguage(userId: String): List<Course> = transaction {
+    override suspend fun getCoursesByUserLanguage(userId: String): List<Course> = dbQuery {
         val userLanguage = Users.selectAll()
             .where { Users.id eq UUID.fromString(userId) }
-            .singleOrNull()?.get(Users.systemLanguage)?.name ?: return@transaction emptyList()
+            .singleOrNull()?.get(Users.systemLanguage)?.name ?: return@dbQuery emptyList()
 
         Courses.selectAll()
             .where { (Courses.language eq userLanguage) and (Courses.isPublished eq true) }

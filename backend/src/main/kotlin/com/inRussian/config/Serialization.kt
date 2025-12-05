@@ -12,6 +12,7 @@ import kotlinx.serialization.modules.subclass
 fun Application.configureSerialization() {
     val taskBodyModule = SerializersModule {
         polymorphic(TaskBody::class) {
+            subclass(TaskBody.ContentBlocks::class)
             subclass(TaskBody.TextConnectTask::class)
             subclass(TaskBody.AudioConnectTask::class)
             subclass(TaskBody.TextInputTask::class)

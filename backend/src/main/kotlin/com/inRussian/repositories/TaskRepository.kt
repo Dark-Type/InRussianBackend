@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.models.tasks.TaskBody
 import com.inRussian.models.tasks.TaskModel
 import com.inRussian.models.tasks.TaskType
@@ -48,7 +49,29 @@ class TaskRepository {
         }
     }
 
-    fun updateTask(taskId: UUID, request: UpdateTaskModelRequest): TaskModel? = transaction {
+    private val json = Json {
+        serializersModule = SerializersModule {
+            polymorphic(TaskBody::class) {
+                subclass(TaskBody.ContentBlocks::class)
+                subclass(TaskBody.AudioConnectTask::class)
+                subclass(TaskBody.TextConnectTask::class)
+                subclass(TaskBody.TextInputTask::class)
+                subclass(TaskBody.TextInputWithVariantTask::class)
+                subclass(TaskBody.ImageConnectTask::class)
+                subclass(TaskBody.ListenAndSelect::class)
+                subclass(TaskBody.ImageAndSelect::class)
+                subclass(TaskBody.ConstructSentenceTask::class)
+                subclass(TaskBody.SelectWordsTask::class)
+            }
+            contextual(ByteArray::class) {
+                ByteArraySerializer
+            }
+        }
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
+
+    suspend fun updateTask(taskId: UUID, request: UpdateTaskModelRequest): TaskModel? = dbQuery {
         val updated = TaskEntity.update({ TaskEntity.id eq taskId }) { st ->
             request.themeId?.let { st[TaskEntity.themeId] = UUID.fromString(it) }
             request.taskBody?.let { st[TaskEntity.taskBody] = json.encodeToJsonElement(it) }
@@ -56,7 +79,7 @@ class TaskRepository {
             st[TaskEntity.updatedAt] = CurrentTimestamp
         }
 
-        if (updated == 0) return@transaction null
+        if (updated == 0) return@dbQuery null
 
         request.taskTypes?.let { newTypes ->
             TaskToTypes.deleteWhere { TaskToTypes.task eq taskId }
@@ -79,13 +102,13 @@ class TaskRepository {
         selectTaskDtoById(taskId)
     }
 
-    fun deleteTask(taskId: UUID): Boolean = transaction {
+    suspend fun deleteTask(taskId: UUID): Boolean = dbQuery {
         TaskToTypes.deleteWhere { TaskToTypes.task eq taskId }
         val deleted = TaskEntity.deleteWhere { TaskEntity.id eq taskId }
         deleted > 0
     }
 
-    fun createTask(request: CreateTaskModelRequest): TaskModel = transaction {
+    suspend fun createTask(request: CreateTaskModelRequest): TaskModel = dbQuery {
         addLogger(StdOutSqlLogger)
 
         val taskBodyJson: JsonElement = json.encodeToJsonElement(request.taskBody)
@@ -116,20 +139,18 @@ class TaskRepository {
             ?: throw IllegalStateException("Created task not found: $insertedId")
     }
 
-    fun getTaskById(id: UUID): TaskModel = transaction {
+    suspend fun getTaskById(id: UUID): TaskModel = dbQuery {
         selectTaskDtoById(id)
-            ?: throw IllegalStateException("Created task not found: $id")
+            ?: throw IllegalStateException("Task not found: $id")
     }
 
-    fun getTaskByThemeId(id: UUID): List<TaskModel> = transaction {
+    suspend fun getTaskByThemeId(id: UUID): List<TaskModel> = dbQuery {
         val tasks = TaskEntity.selectAll().where { TaskEntity.themeId eq id }.map { it[TaskEntity.id].value }
 
-        tasks.map { taskId ->
+        tasks.mapNotNull { taskId ->
             selectTaskDtoById(taskId)
-                ?: throw IllegalStateException("Created task not found: $id")
         }
     }
-
 
     private fun selectTaskDtoById(taskId: UUID): TaskModel? {
         val taskEntity = TaskEntity
@@ -137,44 +158,25 @@ class TaskRepository {
             .where { TaskEntity.id eq taskId }
             .singleOrNull() ?: return null
 
-
-        val taskTypes =
-            TaskToTypes.join(
+        val taskTypes = TaskToTypes
+            .join(
                 TaskTypes,
                 JoinType.INNER,
                 onColumn = TaskToTypes.typeName,
                 otherColumn = TaskTypes.name
             )
-                .selectAll()
-                .where { TaskToTypes.task eq taskId }
-                .map { row: ResultRow ->
-
-                    val cleaned = row[TaskToTypes.typeName].trim().trim('"')
-                    enumValues<TaskType>().first { it.name.equals(cleaned, ignoreCase = true) }
-                }
-        val taskBody = Json {
-            serializersModule = SerializersModule {
-                polymorphic(TaskBody::class) {
-                    subclass(TaskBody.AudioConnectTask::class)
-                    subclass(TaskBody.TextConnectTask::class)
-                    subclass(TaskBody.TextInputTask::class)
-                    subclass(TaskBody.TextInputWithVariantTask::class)
-                    subclass(TaskBody.ImageConnectTask::class)
-                    subclass(TaskBody.ListenAndSelect::class)
-                    subclass(TaskBody.ImageAndSelect::class)
-                    subclass(TaskBody.ConstructSentenceTask::class)
-                    subclass(TaskBody.SelectWordsTask::class)
-                }
-                contextual(ByteArray::class) {
-                    ByteArraySerializer
-                }
+            .selectAll()
+            .where { TaskToTypes.task eq taskId }
+            .map { row: ResultRow ->
+                val cleaned = row[TaskToTypes.typeName].trim().trim('"')
+                enumValues<TaskType>().first { it.name.equals(cleaned, ignoreCase = true) }
             }
-            encodeDefaults = true
-            ignoreUnknownKeys = true
-        }.decodeFromJsonElement(
+
+        val taskBody = json.decodeFromJsonElement(
             PolymorphicSerializer(TaskBody::class),
             taskEntity[TaskEntity.taskBody]
         )
+
         return TaskModel(
             id = taskEntity[TaskEntity.id].value.toString(),
             taskType = taskTypes,
@@ -184,14 +186,4 @@ class TaskRepository {
             updatedAt = taskEntity[TaskEntity.updatedAt].toString()
         )
     }
-
-    private fun ResultRow.toTaskDto(types: List<TaskType>): TaskModel =
-        TaskModel(
-            id = this[TaskEntity.id].value.toString(),
-            taskType = types,
-            taskBody = json.decodeFromJsonElement(this[TaskEntity.taskBody]),
-            question = this[TaskEntity.question],
-            createdAt = this[TaskEntity.createdAt].toString(),
-            updatedAt = this[TaskEntity.updatedAt].toString()
-        )
 }

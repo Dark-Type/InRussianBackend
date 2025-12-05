@@ -1,5 +1,6 @@
 package com.inRussian.repositories.v2
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.tables.v2.UserTaskStateTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.*
@@ -15,7 +16,7 @@ class TaskStateRepository {
         taskId: UUID,
         themeId: UUID,
         courseId: UUID
-    ) = newSuspendedTransaction(Dispatchers.IO) {
+    ) = dbQuery {
         UserTaskStateTable.insertIgnore {
             it[UserTaskStateTable.userId] = userId
             it[UserTaskStateTable.taskId] = taskId
@@ -28,7 +29,7 @@ class TaskStateRepository {
         userId: UUID,
         taskId: UUID,
         solvedAt: Instant = Instant.now()
-    ): Boolean = newSuspendedTransaction(Dispatchers.IO) {
+    ): Boolean = dbQuery {
         val updated = UserTaskStateTable.update(
             where = {
                 (UserTaskStateTable.userId eq userId) and
@@ -42,7 +43,7 @@ class TaskStateRepository {
         updated > 0
     }
 
-    suspend fun isSolved(userId: UUID, taskId: UUID): Boolean = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun isSolved(userId: UUID, taskId: UUID): Boolean = dbQuery {
         UserTaskStateTable
             .selectAll()
             .where { (UserTaskStateTable.userId eq userId) and (UserTaskStateTable.taskId eq taskId) }

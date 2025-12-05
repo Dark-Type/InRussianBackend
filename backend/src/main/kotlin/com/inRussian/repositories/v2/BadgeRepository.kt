@@ -1,5 +1,6 @@
 package com.inRussian.repositories.v2
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.tables.v2.BadgeRuleTable
 import com.inRussian.tables.v2.SimpleBadgeRuleType
 import com.inRussian.tables.v2.UserBadgeTable
@@ -19,11 +20,11 @@ import java.util.UUID
 
 class BadgeRepository {
 
-    suspend fun listActiveRules(): List<ResultRow> = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun listActiveRules(): List<ResultRow> = dbQuery {
         BadgeRuleTable.selectAll().where { BadgeRuleTable.active eq true }.toList()
     }
 
-    suspend fun listActiveRulesByType(type: SimpleBadgeRuleType): List<ResultRow> = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun listActiveRulesByType(type: SimpleBadgeRuleType): List<ResultRow> = dbQuery {
         BadgeRuleTable.selectAll().where { (BadgeRuleTable.active eq true) and (BadgeRuleTable.type eq type) }.toList()
     }
 
@@ -32,7 +33,7 @@ class BadgeRepository {
         badgeId: UUID,
         courseId: UUID? = null,
         themeId: UUID? = null
-    ): Boolean = newSuspendedTransaction(Dispatchers.IO) {
+    ): Boolean = dbQuery {
         val inserted = UserBadgeTable.insertIgnore {
             it[UserBadgeTable.userId] = userId
             it[UserBadgeTable.badgeId] = badgeId
@@ -44,7 +45,7 @@ class BadgeRepository {
     }
 
     suspend fun recordDailySolve(userId: UUID, dayUtc: LocalDate = LocalDate.now(ZoneOffset.UTC)): Boolean =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             val inserted = UserDailySolveTable.insertIgnore {
                 it[UserDailySolveTable.userId] = userId
                 it[UserDailySolveTable.day] = dayUtc
@@ -53,7 +54,7 @@ class BadgeRepository {
         }
 
     suspend fun currentDailyStreak(userId: UUID, todayUtc: LocalDate = LocalDate.now(ZoneOffset.UTC)): Int =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             val days = UserDailySolveTable
                 .selectAll()
                 .where { (UserDailySolveTable.userId eq userId) and (UserDailySolveTable.day lessEq todayUtc) }

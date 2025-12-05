@@ -1,5 +1,6 @@
 package com.inRussian.repositories
 
+import com.inRussian.config.dbQuery
 import com.inRussian.models.users.User
 import com.inRussian.models.users.UserRole
 import com.inRussian.models.users.UserStatus
@@ -43,19 +44,19 @@ class ExposedUserRepository : UserRepository {
         updatedAt = this[Users.updatedAt].toString()
     )
 
-    override suspend fun findByEmail(email: String): User? = transaction {
+    override suspend fun findByEmail(email: String): User? = dbQuery {
         Users.selectAll().where { Users.email eq email }
             .map { it.toUser() }
             .firstOrNull()
     }
 
-    override suspend fun findById(id: String): User? = transaction {
+    override suspend fun findById(id: String): User? = dbQuery {
         Users.selectAll().where { Users.id eq UUID.fromString(id) }
             .map { it.toUser() }
             .firstOrNull()
     }
 
-    override suspend fun create(user: User): User = transaction {
+    override suspend fun create(user: User): User = dbQuery {
         println("Type of user.status: ${user.status::class}, value: ${user.status}")
         Users.insert {
             it[id] = UUID.fromString(user.id)
@@ -70,7 +71,7 @@ class ExposedUserRepository : UserRepository {
         user
     }
 
-    override suspend fun update(user: User): User = transaction {
+    override suspend fun update(user: User): User = dbQuery {
         Users.update({ Users.id eq UUID.fromString(user.id) }) {
             it[email] = user.email
             it[phone] = user.phone
@@ -83,27 +84,27 @@ class ExposedUserRepository : UserRepository {
         user
     }
 
-    override suspend fun existsByRole(role: UserRole): Boolean = transaction {
+    override suspend fun existsByRole(role: UserRole): Boolean = dbQuery {
         Users.selectAll().where { Users.role eq role }.count() > 0
     }
 
-    override suspend fun findAll(): List<User> = transaction {
+    override suspend fun findAll(): List<User> = dbQuery {
         Users.selectAll().map { it.toUser() }
     }
 
-    override suspend fun updateStatus(userId: String, status: UserStatus): Boolean = transaction {
+    override suspend fun updateStatus(userId: String, status: UserStatus): Boolean = dbQuery {
         Users.update({ Users.id eq UUID.fromString(userId) }) {
             it[Users.status] = status
             it[updatedAt] = Instant.now()
         } > 0
     }
 
-    override suspend fun updateLastActivity(userId: String): Boolean = transaction {
+    override suspend fun updateLastActivity(userId: String): Boolean = dbQuery {
         Users.update({ Users.id eq UUID.fromString(userId) }) {
             it[lastActivityAt] = Instant.now()
         } > 0
     }
-    override suspend fun updatePassword(email: String, passwordHash: String): Boolean = transaction {
+    override suspend fun updatePassword(email: String, passwordHash: String): Boolean = dbQuery {
         Users.update({ Users.email eq email.lowercase() }) {
             it[this.passwordHash] = passwordHash
             it[updatedAt] = Instant.now()

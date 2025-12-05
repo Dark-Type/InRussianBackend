@@ -1,5 +1,6 @@
 package com.inRussian.services.v2
 
+import com.inRussian.config.DatabaseFactory.dbQuery
 import com.inRussian.models.v2.AwardedBadgeDTO
 import com.inRussian.repositories.v2.BadgeRepository
 import com.inRussian.tables.v2.BadgeRuleTable
@@ -16,7 +17,7 @@ class BadgeService(
 
     // New: theme-completed handler (sections removed)
     suspend fun handleThemeCompleted(userId: UUID, themeId: UUID, courseId: UUID): List<AwardedBadgeDTO> =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             val rules = badgeRepo.listActiveRulesByType(SimpleBadgeRuleType.THEME_COMPLETED)
             val matched = rules.filter { r -> r[BadgeRuleTable.themeId] == themeId }
             matched.mapNotNull { r ->
@@ -26,7 +27,7 @@ class BadgeService(
         }
 
     suspend fun handleCourseCompleted(userId: UUID, courseId: UUID): List<AwardedBadgeDTO> =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             val rules = badgeRepo.listActiveRulesByType(SimpleBadgeRuleType.COURSE_COMPLETED)
             val matched = rules.filter { r -> r[BadgeRuleTable.courseId] == courseId }
             matched.mapNotNull { r ->
@@ -36,7 +37,7 @@ class BadgeService(
         }
 
     suspend fun handleDailyStreak(userId: UUID): List<AwardedBadgeDTO> =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             badgeRepo.recordDailySolve(userId)
             val streak = badgeRepo.currentDailyStreak(userId)
             val rules = badgeRepo.listActiveRulesByType(SimpleBadgeRuleType.DAILY_STREAK)

@@ -3,6 +3,7 @@ package com.inRussian.config
 import com.inRussian.repositories.PasswordRecoveryTokens
 import com.inRussian.tables.*
 import com.inRussian.tables.v2.BadgeRuleTable
+import com.inRussian.tables.v2.RetrySwitchTable
 import com.inRussian.tables.v2.UserBadgeTable
 import com.inRussian.tables.v2.UserCourseProgressTable
 import com.inRussian.tables.v2.UserDailySolveTable
@@ -14,9 +15,14 @@ import com.inRussian.tables.v2.UserThemeQueueItemTable
 import com.inRussian.tables.v2.UserThemeQueueStateTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
+import io.ktor.network.sockets.Connection
 import io.ktor.server.application.*
+import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.Transaction
+import org.jetbrains.exposed.sql.transactions.TransactionManager
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.transaction
 
 
@@ -32,11 +38,37 @@ fun Application.configureDatabase() {
         username = user
         this.password = password
         maximumPoolSize = maxPoolSize
+
+        minimumIdle = 5
+        idleTimeout = 600000 // 10 minutes
+        connectionTimeout = 30000 // 30 seconds
+        maxLifetime = 1800000 // 30 minutes
+
+        // Connection validation
+        connectionTestQuery = "SELECT 1"
+        validationTimeout = 5000
+
+        leakDetectionThreshold = 60000 // 60 seconds
+
+        // Auto-commit should be true for Exposed
+        isAutoCommit = true
+
+        // Additional settings
+        addDataSourceProperty("cachePrepStmts", "true")
+        addDataSourceProperty("prepStmtCacheSize", "250")
+        addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
+
+        // Keep connections alive
+        keepaliveTime = 30000 // 30 seconds
     }
+
     val dataSource = HikariDataSource(hikariConfig)
 
-
     Database.connect(dataSource)
+
+    TransactionManager.manager.defaultMaxAttempts = 3
+
+    // Create tables
     transaction {
         SchemaUtils.create(
             BadgeRuleTable,
@@ -64,14 +96,31 @@ fun Application.configureDatabase() {
             TaskEntity,
             TaskTypes,
             TaskToTypes,
+            RetrySwitchTable
         )
+        println("✅ Finished schema creation")
+
     }
+
+
     try {
         transaction {
             exec("SELECT 1;")
-            println("Database connection successful.")
+            println("✅ Database connection successful.")
         }
     } catch (e: Exception) {
-        println("Database connection failed: ${e.message}")
+        println("❌ Database connection failed: ${e.message}")
+        throw e
     }
 }
+object DatabaseFactory {
+    suspend fun <T> dbQuery(block: suspend Transaction.() -> T): T =
+        newSuspendedTransaction(Dispatchers.IO) {
+            queryTimeout = 30
+
+            block()
+        }
+}
+
+suspend fun <T> dbQuery(block: suspend Transaction.() -> T): T =
+    DatabaseFactory.dbQuery(block)

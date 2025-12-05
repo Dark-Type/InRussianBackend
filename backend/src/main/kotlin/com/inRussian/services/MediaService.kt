@@ -8,7 +8,8 @@ import java.io.File
 import java.util.UUID
 
 class MediaService(private val mediaRepository: MediaRepository) {
-    fun saveMediaFile(
+
+    suspend fun saveMediaFile(
         fileName: String,
         mimeType: String,
         fileType: FileType,
@@ -18,15 +19,19 @@ class MediaService(private val mediaRepository: MediaRepository) {
     ): Result<MediaFileMeta> {
         return when (fileType) {
             FileType.AVATAR -> {
-                val allowedMimeTypes = listOf("image/png", "image/jpeg", "image/jpg", "image/gif")
+                val allowedMimeTypes = listOf("image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp")
                 if (mimeType !in allowedMimeTypes) {
-                    return Result.failure(Exception("Разрешены только изображения (png, jpeg, gif)"))
+                    return Result.failure(Exception("Разрешены только изображения (png, jpeg, jpg, gif, webp)"))
                 }
                 if (fileBytes.size > 10 * 1024 * 1024) {
                     return Result.failure(Exception("Размер изображения не должен превышать 10 МБ"))
                 }
+
                 val oldAvatar = mediaRepository.findUserAvatar(userId)
-                oldAvatar?.let { mediaRepository.deleteMedia(UUID.fromString(it.mediaId)) }
+                oldAvatar?.let {
+                    mediaRepository.deleteMedia(UUID.fromString(it.mediaId))
+                }
+
                 Result.success(
                     mediaRepository.saveMedia(fileName, mimeType, FileType.AVATAR, userId, fileBytes)
                 )
@@ -43,7 +48,7 @@ class MediaService(private val mediaRepository: MediaRepository) {
         }
     }
 
-    fun updateMediaFile(
+    suspend fun updateMediaFile(
         mediaId: UUID,
         fileName: String,
         mimeType: String,
@@ -52,36 +57,66 @@ class MediaService(private val mediaRepository: MediaRepository) {
         userId: UUID,
         userRole: UserRole = UserRole.STUDENT
     ): Result<MediaFileMeta> {
-        val meta = mediaRepository.getMeta(mediaId) ?: return Result.failure(Exception("Файл не найден"))
+        val meta = mediaRepository.getMeta(mediaId)
+            ?: return Result.failure(Exception("Файл не найден"))
+
         if (fileType == FileType.AVATAR) {
             if (meta.uploadedBy != userId.toString()) {
                 return Result.failure(Exception("Можно обновлять только свой аватар"))
+            }
+
+            if (fileBytes.size > 10 * 1024 * 1024) {
+                return Result.failure(Exception("Размер изображения не должен превышать 10 МБ"))
+            }
+
+            val allowedMimeTypes = listOf("image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp")
+            if (mimeType !in allowedMimeTypes) {
+                return Result.failure(Exception("Разрешены только изображения (png, jpeg, jpg, gif, webp)"))
             }
         } else {
             if (userRole != UserRole.CONTENT_MODERATOR && userRole != UserRole.ADMIN) {
                 return Result.failure(Exception("Нет прав для обновления контента"))
             }
         }
+
         val updatedMeta = mediaRepository.updateMedia(mediaId, fileName, mimeType, fileType, fileBytes)
         return Result.success(updatedMeta)
     }
 
-    fun deleteMediaFile(
-        mediaId: UUID, userId: UUID,
+    suspend fun deleteMediaFile(
+        mediaId: UUID,
+        userId: UUID,
         userRole: UserRole = UserRole.STUDENT
     ): Boolean {
         val meta = mediaRepository.getMeta(mediaId) ?: return false
+
         return when (meta.fileType) {
-            FileType.AVATAR -> meta.uploadedBy == userId.toString() && mediaRepository.deleteMedia(mediaId)
-            else -> (userRole == UserRole.CONTENT_MODERATOR || userRole == UserRole.ADMIN) && mediaRepository.deleteMedia(
-                mediaId
-            )
+            FileType.AVATAR -> {
+                if (meta.uploadedBy == userId.toString()) {
+                    mediaRepository.deleteMedia(mediaId)
+                } else {
+                    false
+                }
+            }
+            else -> {
+                if (userRole == UserRole.CONTENT_MODERATOR || userRole == UserRole.ADMIN) {
+                    mediaRepository.deleteMedia(mediaId)
+                } else {
+                    false
+                }
+            }
         }
     }
 
-    fun getMediaFile(
-        mediaId: UUID
-    ): Pair<MediaFileMeta, File>? {
+    suspend fun getMediaFile(mediaId: UUID): Pair<MediaFileMeta, File>? {
         return mediaRepository.getMedia(mediaId)
+    }
+
+    suspend fun getMediaMeta(mediaId: UUID): MediaFileMeta? {
+        return mediaRepository.getMeta(mediaId)
+    }
+
+    suspend fun getUserAvatar(userId: UUID): MediaFileMeta? {
+        return mediaRepository.findUserAvatar(userId)
     }
 }

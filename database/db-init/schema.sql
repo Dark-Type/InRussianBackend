@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict a2xyhP44loKpweYCbSFFDvmMTxLWrBVb0aqn6M5ML6prBQfKR6r8ZRgWk4AA2xj
+\restrict gWftWx8Z3H31nIbLTwpMRLT72NOBaZt4CciXlwn3pE4Ape0eRj2OdgkGvom2AdL
 
 -- Dumped from database version 16.4 (Postgres.app)
 -- Dumped by pg_dump version 16.10 (Homebrew)
@@ -426,6 +426,20 @@ CREATE TABLE public.media_files (
 ALTER TABLE public.media_files OWNER TO postgres;
 
 --
+-- Name: password_recovery_tokens; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.password_recovery_tokens (
+    email character varying(255) NOT NULL,
+    token_hash character varying(100) NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    created_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.password_recovery_tokens OWNER TO postgres;
+
+--
 -- Name: reports; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -517,6 +531,44 @@ CREATE TABLE public.task_content (
 
 
 ALTER TABLE public.task_content OWNER TO postgres;
+
+--
+-- Name: task_entity; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.task_entity (
+    id uuid NOT NULL,
+    course_id uuid NOT NULL,
+    task_body jsonb NOT NULL,
+    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.task_entity OWNER TO postgres;
+
+--
+-- Name: task_to_types; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.task_to_types (
+    task_id uuid NOT NULL,
+    type_name character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.task_to_types OWNER TO postgres;
+
+--
+-- Name: task_types; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.task_types (
+    name character varying(50) NOT NULL
+);
+
+
+ALTER TABLE public.task_types OWNER TO postgres;
 
 --
 -- Name: tasks; Type: TABLE; Schema: public; Owner: postgres
@@ -762,6 +814,14 @@ ALTER TABLE ONLY public.media_files
 
 
 --
+-- Name: password_recovery_tokens password_recovery_tokens_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.password_recovery_tokens
+    ADD CONSTRAINT password_recovery_tokens_pkey PRIMARY KEY (email);
+
+
+--
 -- Name: user_badges pk_user_badges; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -879,6 +939,22 @@ ALTER TABLE ONLY public.task_answers
 
 ALTER TABLE ONLY public.task_content
     ADD CONSTRAINT task_content_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: task_entity task_entity_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.task_entity
+    ADD CONSTRAINT task_entity_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: task_types task_types_name_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.task_types
+    ADD CONSTRAINT task_types_name_unique UNIQUE (name);
 
 
 --
@@ -1104,6 +1180,13 @@ CREATE INDEX idx_users_role ON public.users USING btree (role);
 
 
 --
+-- Name: password_recovery_tokens_email; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX password_recovery_tokens_email ON public.password_recovery_tokens USING btree (email);
+
+
+--
 -- Name: staff_profiles check_staff_profile_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1245,6 +1328,30 @@ ALTER TABLE ONLY public.task_answers
 
 ALTER TABLE ONLY public.task_content
     ADD CONSTRAINT fk_task_content_task_id__id FOREIGN KEY (task_id) REFERENCES public.tasks(id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+--
+-- Name: task_entity fk_task_entity_course_id__id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.task_entity
+    ADD CONSTRAINT fk_task_entity_course_id__id FOREIGN KEY (course_id) REFERENCES public.courses(id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+--
+-- Name: task_to_types fk_task_to_types_task_id__id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.task_to_types
+    ADD CONSTRAINT fk_task_to_types_task_id__id FOREIGN KEY (task_id) REFERENCES public.task_entity(id) ON UPDATE RESTRICT ON DELETE RESTRICT;
+
+
+--
+-- Name: task_to_types fk_task_to_types_type_name__name; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.task_to_types
+    ADD CONSTRAINT fk_task_to_types_type_name__name FOREIGN KEY (type_name) REFERENCES public.task_types(name) ON UPDATE RESTRICT ON DELETE RESTRICT;
 
 
 --
@@ -1659,5 +1766,5 @@ ALTER TABLE ONLY public.user_task_queue
 -- PostgreSQL database dump complete
 --
 
-\unrestrict a2xyhP44loKpweYCbSFFDvmMTxLWrBVb0aqn6M5ML6prBQfKR6r8ZRgWk4AA2xj
+\unrestrict gWftWx8Z3H31nIbLTwpMRLT72NOBaZt4CciXlwn3pE4Ape0eRj2OdgkGvom2AdL
 

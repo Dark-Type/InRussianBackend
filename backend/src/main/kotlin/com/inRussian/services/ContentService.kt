@@ -3,6 +3,7 @@ package com.inRussian.services
 import com.inRussian.models.content.*
 import com.inRussian.models.tasks.*
 import com.inRussian.repositories.ContentRepository
+import com.inRussian.repositories.ImportReport
 import com.inRussian.repositories.ThemeContents
 import com.inRussian.repositories.ThemeTreeNode
 import com.inRussian.requests.content.*
@@ -172,4 +173,26 @@ class ContentService(private val contentRepository: ContentRepository) {
     } catch (e: Exception) {
         Result.failure(e)
     }
+
+    suspend fun exportCourseJson(courseId: String, sinceIsoUtc: String?): Result<String> = try {
+        Result.success(contentRepository.exportCourseJson(courseId, sinceIsoUtc))
+    } catch (e: Exception) { Result.failure(e) }
+    suspend fun importCourseJson(
+        json: String,
+        targetCourseId: String?,
+        createIfMissing: Boolean,
+        languageOverride: String?,
+        addOnly: Boolean
+    ): Result<ImportReport> = try {
+        Result.success(contentRepository.importCourseJson(json, targetCourseId, createIfMissing, languageOverride, addOnly))
+    } catch (e: Exception) { Result.failure(e) }
+
+    suspend fun cloneCourseStructure(
+        sourceCourseId: String,
+        newLanguage: String,
+        newCourseName: String
+    ): Result<Course> = try {
+        Result.success(contentRepository.cloneCourseStructure(sourceCourseId, newLanguage, newCourseName))
+    } catch (e: Exception) { Result.failure(e) }
+
 }

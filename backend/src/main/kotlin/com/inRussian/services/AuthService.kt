@@ -3,21 +3,26 @@ package com.inRussian.services
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.inRussian.config.JWTConfig
+import com.inRussian.models.users.SystemLanguage
 import com.inRussian.models.users.User
 import com.inRussian.models.users.UserInfo
 import com.inRussian.models.users.UserRole
 import com.inRussian.models.users.UserStatus
+import com.inRussian.repositories.PasswordRecoveryTokenRepository
 import com.inRussian.repositories.UserRepository
 import com.inRussian.requests.auth.LoginRequest
 import com.inRussian.requests.users.*
 import com.inRussian.responses.auth.LoginResponse
+import com.inRussian.services.mailer.Mailer
 import io.ktor.server.application.*
 import org.mindrot.jbcrypt.BCrypt
 import java.util.*
 
 class AuthService(
     private val userRepository: UserRepository,
-    private val application: Application
+    private val application: Application,
+    private val mailer: Mailer,
+    private val recoveryRepo: PasswordRecoveryTokenRepository
 ) {
     private val jwtSecret =
         application.environment.config.propertyOrNull("jwt.secret")?.getString() ?: "your-secret-key"
@@ -38,10 +43,15 @@ class AuthService(
             phone = request.phone,
             role = UserRole.STUDENT,
             systemLanguage = request.systemLanguage,
-            status = UserStatus.ACTIVE
+            status = UserStatus.PENDING_VERIFICATION
         )
 
-        return register(user)
+        val createdUser = userRepository.create(user)
+
+        // Send verification email
+        sendVerificationEmail(createdUser.email, createdUser.systemLanguage)
+
+        return createToken(createdUser)
     }
 
     suspend fun registerStaff(request: StaffRegisterRequest): Result<LoginResponse> {
@@ -68,6 +78,98 @@ class AuthService(
     suspend fun register(user: User): Result<LoginResponse> {
         val createdUser = userRepository.create(user)
         return createToken(createdUser)
+    }
+
+    private suspend fun sendVerificationEmail(email: String, language: SystemLanguage, ttlMinutes: Long = 10) {
+        val code = recoveryRepo.issue(email, ttlMinutes)
+        val (subject, text, html) = getVerificationEmailContent(code, ttlMinutes, language)
+
+        runCatching {
+            mailer.send(to = email, subject = subject, text = text, html = html)
+        }
+    }
+
+    private fun getVerificationEmailContent(code: String, ttlMinutes: Long, language: SystemLanguage): Triple<String, String, String> {
+        return when (language) {
+            SystemLanguage.RUSSIAN -> Triple(
+                "Код подтверждения регистрации",
+                """
+                    Ваш код подтверждения регистрации: $code
+                    Код действителен в течение $ttlMinutes минут.
+                    Если вы не регистрировались на нашем сайте, проигнорируйте это письмо.
+                """.trimIndent(),
+                """
+                    <p>Ваш код подтверждения регистрации: <b>$code</b></p>
+                    <p>Код действителен в течение $ttlMinutes минут.</p>
+                    <p>Если вы не регистрировались на нашем сайте, проигнорируйте это письмо.</p>
+                """.trimIndent()
+            )
+            SystemLanguage.UZBEK -> Triple(
+                "Ro'yxatdan o'tishni tasdiqlash kodi",
+                """
+                    Ro'yxatdan o'tishni tasdiqlash kodingiz: $code
+                    Kod $ttlMinutes daqiqa davomida amal qiladi.
+                    Agar siz ro'yxatdan o'tmagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.
+                """.trimIndent(),
+                """
+                    <p>Ro'yxatdan o'tishni tasdiqlash kodingiz: <b>$code</b></p>
+                    <p>Kod $ttlMinutes daqiqa davomida amal qiladi.</p>
+                    <p>Agar siz ro'yxatdan o'tmagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.</p>
+                """.trimIndent()
+            )
+            SystemLanguage.CHINESE -> Triple(
+                "注册验证码",
+                """
+                    您的注册验证码是：$code
+                    验证码有效期为 $ttlMinutes 分钟。
+                    如果您没有注册，请忽略此邮件。
+                """.trimIndent(),
+                """
+                    <p>您的注册验证码是：<b>$code</b></p>
+                    <p>验证码有效期为 $ttlMinutes 分钟。</p>
+                    <p>如果您没有注册，请忽略此邮件。</p>
+                """.trimIndent()
+            )
+            SystemLanguage.HINDI -> Triple(
+                "पंजीकरण सत्यापन कोड",
+                """
+                    आपका पंजीकरण सत्यापन कोड है: $code
+                    यह कोड $ttlMinutes मिनट के लिए वैध है।
+                    यदि आपने पंजीकरण नहीं किया है, तो इस ईमेल को अनदेखा करें।
+                """.trimIndent(),
+                """
+                    <p>आपका पंजीकरण सत्यापन कोड है: <b>$code</b></p>
+                    <p>यह कोड $ttlMinutes मिनट के लिए वैध है।</p>
+                    <p>यदि आपने पंजीकरण नहीं किया है, तो इस ईमेल को अनदेखा करें।</p>
+                """.trimIndent()
+            )
+            SystemLanguage.TAJIK -> Triple(
+                "Рамзи тасдиқи бақайдгирӣ",
+                """
+                    Рамзи тасдиқи бақайдгирии шумо: $code
+                    Рамз $ttlMinutes дақиқа эътибор дорад.
+                    Агар шумо бақайдгирӣ нашуда бошед, ин паёмро рад кунед.
+                """.trimIndent(),
+                """
+                    <p>Рамзи тасдиқи бақайдгирии шумо: <b>$code</b></p>
+                    <p>Рамз $ttlMinutes дақиқа эътибор дорад.</p>
+                    <p>Агар шумо бақайдгирӣ нашуда бошед, ин паёмро рад кунед.</p>
+                """.trimIndent()
+            )
+            SystemLanguage.ENGLISH -> Triple(
+                "Registration verification code",
+                """
+                    Your registration verification code is: $code
+                    The code is valid for $ttlMinutes minutes.
+                    If you didn't register, please ignore this email.
+                """.trimIndent(),
+                """
+                    <p>Your registration verification code is: <b>$code</b></p>
+                    <p>The code is valid for $ttlMinutes minutes.</p>
+                    <p>If you didn't register, please ignore this email.</p>
+                """.trimIndent()
+            )
+        }
     }
 
     fun createToken(user: User): Result<LoginResponse> {

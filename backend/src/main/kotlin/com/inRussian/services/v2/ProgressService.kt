@@ -1,5 +1,6 @@
 package com.inRussian.services.v2
 
+import com.inRussian.config.dbQuery
 import com.inRussian.models.v2.CourseProgressDTO
 import com.inRussian.models.v2.ThemeProgressDTO
 import com.inRussian.repositories.v2.ProgressRepository
@@ -17,7 +18,7 @@ class ProgressService(
 ) {
 
     suspend fun themeProgress(userId: UUID, themeId: UUID): ThemeProgressDTO =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             progressRepo.getThemeProgress(userId, themeId)
                 ?.let(::toThemeDTO)
                 ?: ThemeProgressDTO(
@@ -32,7 +33,7 @@ class ProgressService(
         }
 
     suspend fun courseProgress(userId: UUID, courseId: UUID): CourseProgressDTO =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             progressRepo.getCourseProgress(userId, courseId)
                 ?.let(::toCourseDTO)
                 ?: CourseProgressDTO(

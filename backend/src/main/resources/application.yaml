@@ -12,9 +12,9 @@ admin:
 jwt:
   domain: "http://localhost:8080/"
   audience: "jwt-audience"
-  realm: "ktor sample app"
+  realm: "ktor app"
 postgres:
-  url: "jdbc:postgresql://database:5432/InRussianBackup"
+  url: "jdbc:postgresql://localhost:5432/InRussianBackup"
   user: postgres
   password: postgres
   maximumPoolSize: 10

@@ -21,6 +21,8 @@ import com.inRussian.repositories.v2.AttemptRepository
 import com.inRussian.repositories.v2.BadgeRepository
 import com.inRussian.repositories.v2.ProgressRepository
 import com.inRussian.repositories.v2.QueueRepository
+import com.inRussian.repositories.v2.RetrySwitchRepository
+import com.inRussian.repositories.v2.RetrySwitchRepositoryImplementation
 import com.inRussian.repositories.v2.StatsRepository
 import com.inRussian.repositories.v2.TaskStateRepository
 
@@ -48,6 +50,7 @@ import com.inRussian.routes.passwordRecoveryRoutes
 import com.inRussian.routes.taskRoutes
 import com.inRussian.routes.v2.attemptRoutes
 import com.inRussian.routes.v2.badgeRoutes
+import com.inRussian.routes.v2.configurationRoutes
 import com.inRussian.routes.v2.courseRoutes
 import com.inRussian.routes.v2.statsRoutes
 import com.inRussian.routes.v2.themeRoutes
@@ -59,6 +62,7 @@ import com.inRussian.services.v2.BadgeService
 import com.inRussian.services.v2.BadgesQueryService
 import com.inRussian.services.v2.ProgressService
 import com.inRussian.services.v2.QueueService
+import com.inRussian.services.v2.RetryService
 import com.inRussian.services.v2.SolveService
 import com.inRussian.services.v2.StatsService
 import com.inRussian.services.v2.UserAttemptService
@@ -70,7 +74,16 @@ fun Application.configureRouting() {
     val userRepository: UserRepository = ExposedUserRepository()
     val profileRepository: UserProfileRepository = ExposedUserProfileRepository()
     val staffRepository: StaffProfileRepository = ExposedStaffProfileRepository()
-    val authService = AuthService(userRepository, application = this)
+    val mailer: Mailer = GmailMailer(
+        host = environment.config.property("mailer.host").getString(),
+        port = environment.config.property("mailer.port").getString().toInt(),
+        username = environment.config.property("mailer.username").getString(),
+        appPassword = environment.config.property("mailer.appPassword").getString(),
+        from = environment.config.property("mailer.from").getString(),
+        useTls = environment.config.property("mailer.useTls").getString().toBoolean()
+    )
+    val recoveryRepo: PasswordRecoveryTokenRepository = ExposedPasswordRecoveryTokenRepository()
+    val authService = AuthService(userRepository, application = this, recoveryRepo = recoveryRepo, mailer = mailer )
     val profileService = ProfileService(profileRepository, staffRepository, userRepository)
     val adminRepository: AdminRepository = ExposedAdminRepository(userRepository, profileRepository, staffRepository)
     val adminService = AdminService(adminRepository, userRepository, authService)
@@ -100,19 +113,13 @@ fun Application.configureRouting() {
         badgeService = badgeService
     )
     val statsService = StatsService(statsRepo)
-    val mailer: Mailer = GmailMailer(
-        host = environment.config.property("mailer.host").getString(),
-        port = environment.config.property("mailer.port").getString().toInt(),
-        username = environment.config.property("mailer.username").getString(),
-        appPassword = environment.config.property("mailer.appPassword").getString(),
-        from = environment.config.property("mailer.from").getString(),
-        useTls = environment.config.property("mailer.useTls").getString().toBoolean()
-    )
-    val recoveryRepo: PasswordRecoveryTokenRepository = ExposedPasswordRecoveryTokenRepository()
+
 
     val userAttemptService = UserAttemptService(
         attemptRepo = attemptRepo
     )
+    val retryRepository : RetrySwitchRepository = RetrySwitchRepositoryImplementation()
+    val retryService = RetryService(retryRepository)
 
     val studentRepository: StudentRepository = ExposedStudentRepository()
     val studentService: StudentService = StudentServiceImpl(studentRepository)
@@ -136,6 +143,7 @@ fun Application.configureRouting() {
             progressService = progressService
         )
         userAttemptRoutes(userAttemptService)
+        configurationRoutes(retryService)
     }
 
 }
