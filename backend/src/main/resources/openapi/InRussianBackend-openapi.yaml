@@ -6,7 +6,7 @@ info:
 servers:
   - url: "https://InRussianBackend"
 paths:
-  /admin/admin/statistics/course/{courseId}:
+  /admin/statistics/course/{courseId}:
     get:
       description: ""
       parameters:
@@ -60,7 +60,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/statistics/overall:
+  /admin/statistics/overall:
     get:
       description: ""
       responses:
@@ -85,7 +85,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/statistics/students/course/{courseId}:
+  /admin/statistics/students/course/{courseId}:
     get:
       description: ""
       parameters:
@@ -139,7 +139,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/statistics/students/overall:
+  /admin/statistics/students/overall:
     get:
       description: "Остальные маршруты статистики..."
       responses:
@@ -164,7 +164,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/users:
+  /admin/users:
     get:
       description: "GET /admin/users"
       parameters:
@@ -244,7 +244,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/users/{userId}:
+  /admin/users/{userId}:
     get:
       description: "GET /admin/users/{userId} — после более специфичных маршрутов"
       parameters:
@@ -298,7 +298,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/users/{userId}/status:
+  /admin/users/{userId}/status:
     put:
       description: "PUT /admin/users/{userId}/status — регистрируем ДО get<UserById>"
       parameters:
@@ -389,7 +389,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/users/count:
+  /admin/users/count:
     get:
       description: "GET /admin/users/count"
       parameters:
@@ -445,7 +445,7 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
-  /admin/admin/users/staff:
+  /admin/users/staff:
     post:
       description: "POST /admin/users/staff"
       requestBody:

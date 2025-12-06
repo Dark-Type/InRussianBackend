@@ -8,7 +8,7 @@ import kotlinx.serialization.Serializable
 class AdminResource {
 
     @Serializable
-    @Resource("/admin/users")
+    @Resource("/users")
     data class Users(
         val page: Int? = null,
         val size: Int? = null,
@@ -20,7 +20,7 @@ class AdminResource {
     )
 
     @Serializable
-    @Resource("/admin/users/count")
+    @Resource("/users/count")
     data class UsersCount(
         val role: String? = null,
         val createdFrom: String? = null,
@@ -28,30 +28,30 @@ class AdminResource {
     )
 
     @Serializable
-    @Resource("/admin/users/staff")
+    @Resource("/users/staff")
     class Staff
 
     @Serializable
-    @Resource("/admin/users/{userId}")
+    @Resource("/users/{userId}")
     data class UserById(val userId: String)
 
     @Serializable
-    @Resource("/admin/users/{userId}/status")
+    @Resource("/users/{userId}/status")
     data class UserStatus(val userId: String)
 
     @Serializable
-    @Resource("/admin/statistics/students/overall")
+    @Resource("/statistics/students/overall")
     class StudentsOverall
 
     @Serializable
-    @Resource("/admin/statistics/students/course/{courseId}")
+    @Resource("/statistics/students/course/{courseId}")
     data class StudentsByCourse(val courseId: String)
 
     @Serializable
-    @Resource("/admin/statistics/course/{courseId}")
+    @Resource("/statistics/course/{courseId}")
     data class CourseStatistics(val courseId: String)
 
     @Serializable
-    @Resource("/admin/statistics/overall")
+    @Resource("/statistics/overall")
     class OverallStatistics
 }
