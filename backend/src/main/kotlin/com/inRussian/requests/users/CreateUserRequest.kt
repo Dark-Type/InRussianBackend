@@ -10,6 +10,9 @@ data class CreateUserRequest(
     val phone: String? = null,
     val role: UserRole,
     val systemLanguage: SystemLanguage,
+    val surname: String = "",
+    val name: String = "",
+    val patronymic: String? = null,
     val avatarId: String? = null
 )
 

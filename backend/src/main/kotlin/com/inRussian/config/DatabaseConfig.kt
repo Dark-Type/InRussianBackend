@@ -1,8 +1,8 @@
 package com.inRussian.config
 
-import com.inRussian.repositories.PasswordRecoveryTokens
 import com.inRussian.tables.*
 import com.inRussian.tables.v2.BadgeRuleTable
+import com.inRussian.tables.v2.EmailTokens
 import com.inRussian.tables.v2.RetrySwitchTable
 import com.inRussian.tables.v2.UserBadgeTable
 import com.inRussian.tables.v2.UserCourseProgressTable
@@ -15,7 +15,6 @@ import com.inRussian.tables.v2.UserThemeQueueItemTable
 import com.inRussian.tables.v2.UserThemeQueueStateTable
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.ktor.network.sockets.Connection
 import io.ktor.server.application.*
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.Database
@@ -68,9 +67,8 @@ fun Application.configureDatabase() {
 
     TransactionManager.manager.defaultMaxAttempts = 3
 
-    // Create tables
     transaction {
-        SchemaUtils.create(
+        SchemaUtils.createMissingTablesAndColumns(
             BadgeRuleTable,
             UserBadgeTable,
             UserDailySolveTable,
@@ -83,9 +81,8 @@ fun Application.configureDatabase() {
             Courses,
             CourseStatistics,
             MediaFiles,
-            StaffProfiles,
             Users,
-            PasswordRecoveryTokens,
+            EmailTokens,
             Themes,
             UserBadges,
             UserCourseEnrollments,
@@ -114,13 +111,17 @@ fun Application.configureDatabase() {
     }
 }
 object DatabaseFactory {
-    suspend fun <T> dbQuery(block: suspend Transaction.() -> T): T =
-        newSuspendedTransaction(Dispatchers.IO) {
-            queryTimeout = 30
-
-            block()
-        }
+    suspend fun <T> dbQuery(
+        isolation: Int? = null,
+        block: suspend Transaction.() -> T
+    ): T = newSuspendedTransaction(
+        context = Dispatchers.IO,
+        transactionIsolation = isolation
+    ) {
+        queryTimeout = 30
+        block()
+    }
 }
 
 suspend fun <T> dbQuery(block: suspend Transaction.() -> T): T =
-    DatabaseFactory.dbQuery(block)
+    DatabaseFactory.dbQuery(block = block)

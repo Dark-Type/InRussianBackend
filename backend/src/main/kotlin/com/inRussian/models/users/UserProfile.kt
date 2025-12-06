@@ -5,9 +5,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class UserProfile(
     val userId: String,
-    val surname: String,
-    val name: String,
-    val patronymic: String? = null,
     val gender: Gender,
     val dob: String, // LocalDate as String (YYYY-MM-DD)
     val dor: String, // LocalDate as String (YYYY-MM-DD)

@@ -11,5 +11,8 @@ data class UpdateUserRequest(
     val role: UserRole? = null,
     val systemLanguage: SystemLanguage? = null,
     val avatarId: String? = null,
+    val surname: String = "",
+    val name: String = "",
+    val patronymic: String? = null,
     val status: UserStatus = UserStatus.ACTIVE
 )

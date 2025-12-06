@@ -3,7 +3,7 @@ WORKDIR /app
 COPY . .
 RUN gradle clean build --no-daemon
 
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 

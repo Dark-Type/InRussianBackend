@@ -1,52 +1,47 @@
 package com.inRussian.config
 
 
-import com.inRussian.repositories.AdminRepository
-import com.inRussian.repositories.ContentRepository
-import com.inRussian.repositories.ExposedAdminRepository
-import com.inRussian.repositories.ExposedContentRepository
-import com.inRussian.repositories.ExposedPasswordRecoveryTokenRepository
-import com.inRussian.repositories.ExposedStaffProfileRepository
-import com.inRussian.repositories.ExposedStudentRepository
-import com.inRussian.repositories.ExposedUserProfileRepository
-import com.inRussian.repositories.ExposedUserRepository
+import com.inRussian.repositories.AttemptRepository
+import com.inRussian.repositories.BadgeRepository
+import com.inRussian.repositories.ContentStatsRepository
+import com.inRussian.repositories.CoursesRepository
+import com.inRussian.repositories.EmailTokenRepository
+import com.inRussian.repositories.ExposedAttemptRepository
+import com.inRussian.repositories.ExposedBadgeRepository
+import com.inRussian.repositories.ExposedContentStatsRepository
+import com.inRussian.repositories.ExposedCoursesRepository
+import com.inRussian.repositories.ExposedEmailTokenRepository
+import com.inRussian.repositories.ExposedMediaRepository
+import com.inRussian.repositories.ExposedProgressRepository
+import com.inRussian.repositories.ExposedProgressStatsRepository
+import com.inRussian.repositories.ExposedQueueRepository
+import com.inRussian.repositories.ExposedReportsRepository
+import com.inRussian.repositories.ExposedTaskStateRepository
+import com.inRussian.repositories.ExposedTasksRepository
+import com.inRussian.repositories.ExposedThemesRepository
+import com.inRussian.repositories.ExposedUserCourseEnrollmentsRepository
+import com.inRussian.repositories.ExposedUserCourseStatisticsRepository
+import com.inRussian.repositories.ExposedUserLanguageSkillsRepository
+import com.inRussian.repositories.ExposedUserProfilesRepository
+import com.inRussian.repositories.ExposedUserStatisticsRepository
+import com.inRussian.repositories.ExposedUsersRepository
 import com.inRussian.repositories.MediaRepository
-import com.inRussian.repositories.PasswordRecoveryTokenRepository
-import com.inRussian.repositories.StaffProfileRepository
-import com.inRussian.repositories.StudentRepository
-import com.inRussian.repositories.TaskRepository
-import com.inRussian.repositories.UserProfileRepository
-import com.inRussian.repositories.UserRepository
-import com.inRussian.repositories.v2.AttemptRepository
-import com.inRussian.repositories.v2.BadgeRepository
-import com.inRussian.repositories.v2.ProgressRepository
-import com.inRussian.repositories.v2.QueueRepository
-import com.inRussian.repositories.v2.RetrySwitchRepository
-import com.inRussian.repositories.v2.RetrySwitchRepositoryImplementation
-import com.inRussian.repositories.v2.StatsRepository
-import com.inRussian.repositories.v2.TaskStateRepository
-
-import com.inRussian.routes.authRoutes
-import com.inRussian.routes.contentRoutes
-import com.inRussian.routes.expertRoutes
-import com.inRussian.routes.profileRoutes
+import com.inRussian.repositories.ProgressRepository
+import com.inRussian.repositories.ProgressStatsRepository
+import com.inRussian.repositories.QueueRepository
+import com.inRussian.repositories.ReportsRepository
+import com.inRussian.repositories.RetrySwitchRepository
+import com.inRussian.repositories.RetrySwitchRepositoryImplementation
+import com.inRussian.repositories.TaskStateRepository
+import com.inRussian.repositories.TasksRepository
+import com.inRussian.repositories.ThemesRepository
+import com.inRussian.repositories.UserCourseEnrollmentsRepository
+import com.inRussian.repositories.UserCourseStatisticsRepository
+import com.inRussian.repositories.UserLanguageSkillsRepository
+import com.inRussian.repositories.UserProfilesRepository
+import com.inRussian.repositories.UserStatisticsRepository
+import com.inRussian.repositories.UsersRepository
 import com.inRussian.routes.studentRoutes
-import com.inRussian.services.AdminService
-import com.inRussian.services.AuthService
-import com.inRussian.services.ContentService
-import com.inRussian.services.ExpertService
-import com.inRussian.services.ExpertServiceImpl
-import com.inRussian.services.ProfileService
-import com.inRussian.services.StudentService
-import com.inRussian.services.StudentServiceImpl
-import io.ktor.server.application.*
-
-import io.ktor.server.routing.*
-
-import com.inRussian.routes.adminRoutes
-import com.inRussian.routes.contentManagerRoutes
-import com.inRussian.routes.mediaRoutes
-import com.inRussian.routes.passwordRecoveryRoutes
 import com.inRussian.routes.taskRoutes
 import com.inRussian.routes.v2.attemptRoutes
 import com.inRussian.routes.v2.badgeRoutes
@@ -55,7 +50,20 @@ import com.inRussian.routes.v2.courseRoutes
 import com.inRussian.routes.v2.statsRoutes
 import com.inRussian.routes.v2.themeRoutes
 import com.inRussian.routes.v2.userAttemptRoutes
-import com.inRussian.services.MediaService
+import com.inRussian.routes.v3.expert.expertRoutes
+import com.inRussian.routes.v3.admin.adminRoutes
+import com.inRussian.routes.v3.auth.authRoutes
+import com.inRussian.routes.v3.content.contentRoutes
+import com.inRussian.routes.v3.content_manager.contentManagerRoutes
+import com.inRussian.routes.v3.mailing.mailingRoutes
+import com.inRussian.routes.v3.media.mediaRoutes
+import com.inRussian.routes.v3.profile.profileRoutes
+import com.inRussian.services.v3.ExpertService
+import com.inRussian.services.v3.ExpertServiceImpl
+import com.inRussian.services.v3.ContentService
+import com.inRussian.services.v3.AdminService
+import com.inRussian.services.v3.AuthService
+import com.inRussian.services.v3.AuthServiceImplementation
 import com.inRussian.services.mailer.GmailMailer
 import com.inRussian.services.mailer.Mailer
 import com.inRussian.services.v2.BadgeService
@@ -66,14 +74,19 @@ import com.inRussian.services.v2.RetryService
 import com.inRussian.services.v2.SolveService
 import com.inRussian.services.v2.StatsService
 import com.inRussian.services.v2.UserAttemptService
+import com.inRussian.services.v3.MediaService
+import com.inRussian.services.v3.ProfileService
+import com.inRussian.services.v3.StudentService
+import com.inRussian.services.v3.StudentServiceImpl
+import io.ktor.server.application.*
+
+import io.ktor.server.routing.*
 
 
 fun Application.configureRouting() {
-    val mediaRepository = MediaRepository()
+    val mediaRepository: MediaRepository = ExposedMediaRepository()
     val mediaService = MediaService(mediaRepository)
-    val userRepository: UserRepository = ExposedUserRepository()
-    val profileRepository: UserProfileRepository = ExposedUserProfileRepository()
-    val staffRepository: StaffProfileRepository = ExposedStaffProfileRepository()
+    val userRepository: UsersRepository = ExposedUsersRepository()
     val mailer: Mailer = GmailMailer(
         host = environment.config.property("mailer.host").getString(),
         port = environment.config.property("mailer.port").getString().toInt(),
@@ -82,22 +95,43 @@ fun Application.configureRouting() {
         from = environment.config.property("mailer.from").getString(),
         useTls = environment.config.property("mailer.useTls").getString().toBoolean()
     )
-    val recoveryRepo: PasswordRecoveryTokenRepository = ExposedPasswordRecoveryTokenRepository()
-    val authService = AuthService(userRepository, application = this, recoveryRepo = recoveryRepo, mailer = mailer )
-    val profileService = ProfileService(profileRepository, staffRepository, userRepository)
-    val adminRepository: AdminRepository = ExposedAdminRepository(userRepository, profileRepository, staffRepository)
-    val adminService = AdminService(adminRepository, userRepository, authService)
-    val contentRepository: ContentRepository = ExposedContentRepository()
-    val contentService = ContentService(contentRepository)
-    val expertService: ExpertService = ExpertServiceImpl(
-        adminRepository = adminRepository,
+    val recoveryRepo: EmailTokenRepository =
+        ExposedEmailTokenRepository()
+    val authService: AuthService =
+        AuthServiceImplementation(userRepository, application = this, recoveryRepo = recoveryRepo, mailer = mailer)
+    val enrollmentsRepository: UserCourseEnrollmentsRepository = ExposedUserCourseEnrollmentsRepository()
+    val progressStatsRepository: ProgressStatsRepository = ExposedProgressStatsRepository()
+    val userProfilesRepository: UserProfilesRepository = ExposedUserProfilesRepository()
+    val userLanguageSkillsRepository: UserLanguageSkillsRepository = ExposedUserLanguageSkillsRepository()
+    val profileService = ProfileService(userRepository, userProfilesRepository, userLanguageSkillsRepository)
+    val adminService = AdminService(userRepository, authService, enrollmentsRepository, progressStatsRepository)
+    val tasksRepository: TasksRepository = ExposedTasksRepository(appJson)
+    val themesRepository: ThemesRepository = ExposedThemesRepository(tasksRepository)
+    val coursesRepository: CoursesRepository = ExposedCoursesRepository()
+    val contentStatsRepository: ContentStatsRepository =
+        ExposedContentStatsRepository(tasksRepository, themesRepository)
+    val reportsRepository: ReportsRepository = ExposedReportsRepository()
+    val userCourseStatisticsRepository: UserCourseStatisticsRepository = ExposedUserCourseStatisticsRepository()
+    val userStatisticsRepository: UserStatisticsRepository = ExposedUserStatisticsRepository()
+    val contentService: ContentService = ContentService(
+        themesRepository = themesRepository,
+        tasksRepository = tasksRepository,
+        coursesRepository = coursesRepository,
+        contentStatsRepository = contentStatsRepository,
+        reportsRepository = reportsRepository
     )
-    val attemptRepo = AttemptRepository()
-    val stateRepo = TaskStateRepository()
-    val queueRepo = QueueRepository()
-    val progressRepo = ProgressRepository()
-    val badgeRepo = BadgeRepository()
-    val statsRepo = StatsRepository()
+    val expertService: ExpertService = ExpertServiceImpl(
+        usersRepository = userRepository,
+        userCourseEnrollmentsRepository = enrollmentsRepository,
+        userCourseStatisticsRepository = userCourseStatisticsRepository,
+        userStatisticsRepository = userStatisticsRepository,
+    )
+    val userCourseEnrollmentsRepository: UserCourseEnrollmentsRepository = ExposedUserCourseEnrollmentsRepository()
+    val attemptRepo: AttemptRepository = ExposedAttemptRepository()
+    val stateRepo: TaskStateRepository = ExposedTaskStateRepository()
+    val queueRepo: QueueRepository = ExposedQueueRepository()
+    val progressRepo: ProgressRepository = ExposedProgressRepository()
+    val badgeRepo: BadgeRepository = ExposedBadgeRepository()
     val badgesQueryService = BadgesQueryService()
 
 
@@ -112,20 +146,23 @@ fun Application.configureRouting() {
         progressRepo = progressRepo,
         badgeService = badgeService
     )
-    val statsService = StatsService(statsRepo)
-
+    val statsService = StatsService(progressRepo = progressStatsRepository, contentRepo = contentStatsRepository)
 
     val userAttemptService = UserAttemptService(
         attemptRepo = attemptRepo
     )
-    val retryRepository : RetrySwitchRepository = RetrySwitchRepositoryImplementation()
+    val retryRepository: RetrySwitchRepository =
+        RetrySwitchRepositoryImplementation()
     val retryService = RetryService(retryRepository)
-
-    val studentRepository: StudentRepository = ExposedStudentRepository()
-    val studentService: StudentService = StudentServiceImpl(studentRepository)
+//
+    val studentService: StudentService = StudentServiceImpl(
+        courses = coursesRepository,
+        enrollments = userCourseEnrollmentsRepository,
+        users = userRepository
+    )
     routing {
         authRoutes(authService)
-        passwordRecoveryRoutes(mailer, recoveryRepo, userRepository)
+        mailingRoutes(mailer, recoveryRepo, userRepository)
         adminRoutes(adminService)
         profileRoutes(profileService)
         contentRoutes(contentService)
@@ -133,7 +170,7 @@ fun Application.configureRouting() {
         expertRoutes(expertService)
         studentRoutes(studentService)
         mediaRoutes(mediaService)
-        taskRoutes(TaskRepository())
+        taskRoutes(tasksRepository)
         courseRoutes(progressService)
         attemptRoutes(solveService)
         badgeRoutes(badgesQueryService)

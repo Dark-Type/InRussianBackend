@@ -3,12 +3,10 @@ package com.inRussian.services.v2
 import com.inRussian.config.dbQuery
 import com.inRussian.models.v2.CourseProgressDTO
 import com.inRussian.models.v2.ThemeProgressDTO
-import com.inRussian.repositories.v2.ProgressRepository
+import com.inRussian.repositories.ProgressRepository
 import com.inRussian.tables.v2.UserCourseProgressTable
 import com.inRussian.tables.v2.UserThemeProgressTable
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID

@@ -6,73 +6,70 @@ import com.inRussian.models.v2.CourseStatsDTO
 import com.inRussian.models.v2.PlatformStatsDTO
 import com.inRussian.models.v2.ThemeProgressDTO
 import com.inRussian.models.v2.UserStatsDTO
-import com.inRussian.repositories.v2.StatsRepository
+import com.inRussian.repositories.ContentStatsRepository
+import com.inRussian.repositories.ProgressStatsRepository
 import com.inRussian.tables.v2.UserCourseProgressTable
 import com.inRussian.tables.v2.UserThemeProgressTable
-import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.UUID
 
 class StatsService(
-    private val statsRepo: StatsRepository,
+    private val progressRepo: ProgressStatsRepository,
+    private val contentRepo: ContentStatsRepository
 ) {
 
-    suspend fun userStats(userId: UUID): UserStatsDTO =
-        newSuspendedTransaction(Dispatchers.IO) {
-            val courseIds = statsRepo.listEnrolledCourseIds(userId)
+    suspend fun userStats(userId: UUID): UserStatsDTO {
+        val courseIds = progressRepo.listEnrolledCourseIds(userId)
 
-            val courseProgressRows = statsRepo.listCourseProgressForUser(userId, courseIds)
-            val themeProgressRows = statsRepo.listThemeProgressForUser(userId, courseIds)
+        val courseProgressRows = progressRepo.listCourseProgressForUser(userId, courseIds)
+        val themeProgressRows = progressRepo.listThemeProgressForUser(userId, courseIds)
 
-            val courseProgressById = courseProgressRows.associateBy { it[UserCourseProgressTable.courseId] }
-            val themesByCourse = themeProgressRows.groupBy { it[UserThemeProgressTable.courseId] }
+        val courseProgressById = courseProgressRows.associateBy { it[UserCourseProgressTable.courseId] }
+        val themesByCourse = themeProgressRows.groupBy { it[UserThemeProgressTable.courseId] }
 
-            val courseStats = courseIds.map { cid ->
-                val cpRow = courseProgressById[cid]
-                val cpDto = cpRow?.let(::toCourseDTO)
-                val themeDtos = (themesByCourse[cid] ?: emptyList()).map(::toThemeDTO)
-                CourseStatsDTO(
-                    courseId = cid,
-                    courseProgress = cpDto,
-                    themes = themeDtos
-                )
-            }
-
-            UserStatsDTO(
-                userId = userId,
-                courses = courseStats
+        val courseStats = courseIds.map { cid ->
+            val cpRow = courseProgressById[cid]
+            val cpDto = cpRow?.let(::toCourseDTO)
+            val themeDtos = (themesByCourse[cid] ?: emptyList()).map(::toThemeDTO)
+            CourseStatsDTO(
+                courseId = cid,
+                courseProgress = cpDto,
+                themes = themeDtos
             )
         }
 
-    suspend fun courseAverageStats(courseId: UUID): CourseAverageStatsDTO =
-        newSuspendedTransaction(Dispatchers.IO) {
-            val courseAvg = statsRepo.getCourseAverageProgress(courseId)
-            val themesAvg = statsRepo.getThemeAverageProgressByCourse(courseId)
-            CourseAverageStatsDTO(
-                courseId = courseId,
-                courseAverage = courseAvg,
-                themesAverage = themesAvg
-            )
-        }
+        return UserStatsDTO(
+            userId = userId,
+            courses = courseStats
+        )
+    }
 
-    suspend fun platformStats(): PlatformStatsDTO =
-        newSuspendedTransaction(Dispatchers.IO) {
-            val totalCourses = statsRepo.countTotalCourses()
-            val totalUsers = statsRepo.countTotalUsersWithProgress()
-            val courseLevelAvg = statsRepo.getPlatformCourseAverages()
-            val themeLevelAvg = statsRepo.getPlatformThemeAverages()
+    suspend fun courseAverageStats(courseId: UUID): CourseAverageStatsDTO {
+        val courseAvg = progressRepo.getCourseAverageProgress(courseId)
+        val themesAvg = progressRepo.getThemeAverageProgressByCourse(courseId)
+        return CourseAverageStatsDTO(
+            courseId = courseId,
+            courseAverage = courseAvg,
+            themesAverage = themesAvg
+        )
+    }
 
-            PlatformStatsDTO(
-                totalCourses = totalCourses,
-                totalUsersWithProgress = totalUsers,
-                courseLevelAverage = courseLevelAvg,
-                themeLevelAverage = themeLevelAvg,
-                generatedAt = Instant.now(),
-            )
-        }
+    suspend fun platformStats(): PlatformStatsDTO {
+        val totalCourses = progressRepo.countTotalCourses()
+        val totalUsers = progressRepo.countTotalUsersWithProgress()
+        val courseLevelAvg = progressRepo.getPlatformCourseAverages()
+        val themeLevelAvg = progressRepo.getPlatformThemeAverages()
+
+        return PlatformStatsDTO(
+            totalCourses = totalCourses,
+            totalUsersWithProgress = totalUsers,
+            courseLevelAverage = courseLevelAvg,
+            themeLevelAverage = themeLevelAvg,
+            generatedAt = Instant.now(),
+        )
+    }
 
     private fun toThemeDTO(row: ResultRow): ThemeProgressDTO =
         ThemeProgressDTO(

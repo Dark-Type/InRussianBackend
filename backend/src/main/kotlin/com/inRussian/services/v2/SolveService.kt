@@ -5,10 +5,10 @@ import com.inRussian.models.v2.AwardedBadgeDTO
 import com.inRussian.models.v2.CourseProgressDTO
 import com.inRussian.models.v2.SolveResult
 import com.inRussian.models.v2.ThemeProgressDTO
-import com.inRussian.repositories.v2.AttemptRepository
-import com.inRussian.repositories.v2.ProgressRepository
-import com.inRussian.repositories.v2.QueueRepository
-import com.inRussian.repositories.v2.TaskStateRepository
+import com.inRussian.repositories.AttemptRepository
+import com.inRussian.repositories.ProgressRepository
+import com.inRussian.repositories.QueueRepository
+import com.inRussian.repositories.TaskStateRepository
 import com.inRussian.tables.TaskEntity
 import com.inRussian.tables.Themes
 import kotlinx.coroutines.Dispatchers

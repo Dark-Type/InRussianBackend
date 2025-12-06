@@ -18,5 +18,8 @@ data class User(
     val status: UserStatus = UserStatus.ACTIVE,
     val lastActivityAt: String? = null,
     val createdAt: String = LocalDateTime.now().toString(),
-    val updatedAt: String = LocalDateTime.now().toString()
+    val updatedAt: String = LocalDateTime.now().toString(),
+    val surname: String = "",
+    val name: String = "",
+    val patronymic: String? = null
 )

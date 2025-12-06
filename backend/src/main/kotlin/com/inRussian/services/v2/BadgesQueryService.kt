@@ -1,5 +1,6 @@
 package com.inRussian.services.v2
 
+import com.inRussian.config.dbQuery
 import com.inRussian.models.v2.BadgeRuleDTO
 import com.inRussian.models.v2.UserAwardedBadgeDTO
 import com.inRussian.tables.v2.BadgeRuleTable
@@ -15,7 +16,7 @@ import java.util.UUID
 class BadgesQueryService {
 
     suspend fun listUserBadges(userId: UUID): List<UserAwardedBadgeDTO> =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             UserBadgeTable
                 .join(BadgeRuleTable, JoinType.LEFT, onColumn = UserBadgeTable.badgeId, otherColumn = BadgeRuleTable.badgeId)
                 .selectAll().where { UserBadgeTable.userId eq userId }
@@ -24,7 +25,7 @@ class BadgesQueryService {
         }
 
     suspend fun getBadgeRules(badgeId: UUID): List<BadgeRuleDTO> =
-        newSuspendedTransaction(Dispatchers.IO) {
+        dbQuery {
             BadgeRuleTable
                 .selectAll().where { BadgeRuleTable.badgeId eq badgeId }
                 .map { toBadgeRuleDTO(it) }

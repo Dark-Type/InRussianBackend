@@ -1,21 +1,18 @@
 package com.inRussian.routes.v2
 
 import com.inRussian.requests.v2.AttemptRequest
-import com.inRussian.services.v2.BadgesQueryService
-import com.inRussian.services.v2.ProgressService
-import com.inRussian.services.v2.QueueService
-import com.inRussian.services.v2.SolveService
-import com.inRussian.services.v2.StatsService
-import com.inRussian.services.v2.UserAttemptService
+import com.inRussian.services.v2.*
 import io.ktor.http.HttpStatusCode
+import io.ktor.resources.Resource
 import io.ktor.server.auth.authenticate
 import io.ktor.server.auth.jwt.JWTPrincipal
 import io.ktor.server.auth.principal
 import io.ktor.server.request.receive
 import io.ktor.server.response.respond
+import io.ktor.server.resources.get
+import io.ktor.server.resources.post
 import io.ktor.server.routing.Route
-import io.ktor.server.routing.get
-import io.ktor.server.routing.post
+import kotlinx.serialization.Serializable
 import java.util.UUID
 
 fun Route.themeRoutes(
@@ -23,34 +20,25 @@ fun Route.themeRoutes(
     progressService: ProgressService
 ) {
     authenticate("auth-jwt") {
-        // Get next task within a specific theme queue
-        get("/themes/{themeId}/tasks/next") {
+        get<ThemeResource.NextTask> { res ->
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val themeId = call.parameters["themeId"]?.let(UUID::fromString)
-            if (themeId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
-                return@get
-            }
 
-            val next = queueService.getOrSeedNextTask(UUID.fromString(userId), themeId)
-            if (next == null) {
-                call.respond(HttpStatusCode.NoContent)
-                return@get
-            }
-            call.respond(next)
+            val themeId = res.parent.themeId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
+
+            val next = queueService.getOrSeedNextTask(userId.toUuid(), themeId)
+            if (next == null) call.respond(HttpStatusCode.NoContent) else call.respond(next)
         }
 
-        // Get theme-level progress
-        get("/themes/{themeId}/progress") {
+        get<ThemeResource.Progress> { res ->
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val themeId = call.parameters["themeId"]?.let(UUID::fromString)
-            if (themeId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
-                return@get
-            }
-            val progress = progressService.themeProgress(UUID.fromString(userId), themeId)
+
+            val themeId = res.parent.themeId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
+
+            val progress = progressService.themeProgress(userId.toUuid(), themeId)
             call.respond(progress)
         }
     }
@@ -60,15 +48,14 @@ fun Route.courseRoutes(
     progressService: ProgressService
 ) {
     authenticate("auth-jwt") {
-        get("/courses/{courseId}/progress") {
+        get<CourseResource.Progress> { res ->
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val courseId = call.parameters["courseId"]?.let(UUID::fromString)
-            if (courseId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid courseId")
-                return@get
-            }
-            val progress = progressService.courseProgress(UUID.fromString(userId), courseId)
+
+            val courseId = res.parent.courseId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid courseId")
+
+            val progress = progressService.courseProgress(userId.toUuid(), courseId)
             call.respond(progress)
         }
     }
@@ -78,7 +65,7 @@ fun Route.attemptRoutes(
     solveService: SolveService
 ) {
     authenticate("auth-jwt") {
-        post("/attempts") {
+        post<AttemptResource.Create> {
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
             val body = call.receive<AttemptRequest>()
@@ -107,25 +94,20 @@ fun Route.badgeRoutes(
     badgesQueryService: BadgesQueryService
 ) {
     authenticate("auth-jwt") {
-        get("/me/badges") {
+        get<BadgeResource.MyBadges> {
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val badges = badgesQueryService.listUserBadges(UUID.fromString(userId))
+            val badges = badgesQueryService.listUserBadges(userId.toUuid())
             call.respond(badges)
         }
 
-        get("/badges/{badgeId}") {
-            val badgeId = call.parameters["badgeId"]?.let(UUID::fromString)
-            if (badgeId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid badgeId")
-                return@get
-            }
+        get<BadgeResource.ById> { res ->
+            val badgeId = res.badgeId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid badgeId")
+
             val rules = badgesQueryService.getBadgeRules(badgeId)
-            if (rules.isEmpty()) {
-                call.respond(HttpStatusCode.NotFound, "Badge rules not found")
-            } else {
-                call.respond(rules)
-            }
+            if (rules.isEmpty()) call.respond(HttpStatusCode.NotFound, "Badge rules not found")
+            else call.respond(rules)
         }
     }
 }
@@ -134,27 +116,21 @@ fun Route.statsRoutes(
     statsService: StatsService
 ) {
     authenticate("auth-jwt") {
-        get("/users/{userId}/stats") {
-            val userId = call.parameters["userId"]?.let(UUID::fromString)
-            if (userId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid userId")
-                return@get
-            }
+        get<UserStatsResource> { res ->
+            val userId = res.userId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid userId")
             val stats = statsService.userStats(userId)
             call.respond(stats)
         }
 
-        get("/course/{courseId}/stats") {
-            val courseId = call.parameters["courseId"]?.let(UUID::fromString)
-            if (courseId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid courseId")
-                return@get
-            }
+        get<CourseStatsResource> { res ->
+            val courseId = res.courseId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid courseId")
             val stats = statsService.courseAverageStats(courseId)
             call.respond(stats)
         }
 
-        get("/platform/stats") {
+        get<PlatformStatsResource> {
             val stats = statsService.platformStats()
             call.respond(stats)
         }
@@ -165,21 +141,75 @@ fun Route.userAttemptRoutes(
     userAttemptService: UserAttemptService
 ) {
     authenticate("auth-jwt") {
-        get("/themes/{themeId}/my-attempts") {
+        get<UserAttemptResource.MyAttempts> { res ->
             val principal = call.principal<JWTPrincipal>()!!
             val userId = principal.payload.getClaim("userId").asString()
-            val themeId = call.parameters["themeId"]?.let(UUID::fromString)
 
-            if (themeId == null) {
-                call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
-                return@get
-            }
+            val themeId = res.parent.themeId.toUuidOrNull()
+                ?: return@get call.respond(HttpStatusCode.BadRequest, "Invalid themeId")
 
-            val attempts = userAttemptService.getUserThemeAttempts(
-                UUID.fromString(userId),
-                themeId
-            )
+            val attempts = userAttemptService.getUserThemeAttempts(userId.toUuid(), themeId)
             call.respond(attempts)
         }
     }
 }
+
+// -------- Resources --------
+
+@Serializable
+@Resource("/themes/{themeId}")
+class ThemeResource(val themeId: String) {
+    @Serializable @Resource("tasks/next")
+    class NextTask(val parent: ThemeResource)
+
+    @Serializable @Resource("progress")
+    class Progress(val parent: ThemeResource)
+}
+
+@Serializable
+@Resource("/courses/{courseId}")
+class CourseResource(val courseId: String) {
+    @Serializable @Resource("progress")
+    class Progress(val parent: CourseResource)
+}
+
+@Serializable
+@Resource("/attempts")
+class AttemptResource {
+    @Serializable @Resource("")
+    class Create(val parent: AttemptResource = AttemptResource())
+}
+
+@Serializable
+@Resource("/me/badges")
+class BadgeResource {
+    @Serializable @Resource("")
+    class MyBadges(val parent: BadgeResource = BadgeResource())
+
+    @Serializable @Resource("/badges/{badgeId}")
+    class ById(val badgeId: String)
+}
+
+@Serializable
+@Resource("/users/{userId}/stats")
+class UserStatsResource(val userId: String)
+
+@Serializable
+@Resource("/course/{courseId}/stats")
+class CourseStatsResource(val courseId: String)
+
+@Serializable
+@Resource("/platform/stats")
+class PlatformStatsResource
+
+@Serializable
+@Resource("/themes/{themeId}/my-attempts")
+class UserAttemptResource(val themeId: String) {
+    @Serializable @Resource("")
+    class MyAttempts(val parent: UserAttemptResource)
+}
+
+// -------- Helpers --------
+
+private fun String.toUuid(): UUID = UUID.fromString(this)
+private fun String.toUuidOrNull(): UUID? = runCatching { UUID.fromString(this) }.getOrNull()

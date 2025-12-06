@@ -1,6 +1,6 @@
 package com.inRussian.services.v2
 
-import com.inRussian.repositories.v2.RetrySwitchRepository
+import com.inRussian.repositories.RetrySwitchRepository
 
 class RetryService(private val repository: RetrySwitchRepository) {
     suspend fun getRetrySwitchStatus(): Result<Boolean> {

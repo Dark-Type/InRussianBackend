@@ -15,6 +15,9 @@ fun Application.module() {
     configureHTTP()
     configureMonitoring()
     configureSecurity()
+    configureResources()
     configureRouting()
+    configureValidation()
+
     println("Application module configured successfully!")
 }

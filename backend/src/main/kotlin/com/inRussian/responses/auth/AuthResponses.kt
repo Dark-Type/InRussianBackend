@@ -1,6 +1,5 @@
 package com.inRussian.responses.auth
 
-import com.inRussian.models.users.StaffProfile
 import com.inRussian.models.users.User
 import com.inRussian.models.users.UserInfo
 import com.inRussian.models.users.UserProfile
@@ -73,13 +72,6 @@ data class UserProfileResponse(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-@Serializable
-data class StaffProfileResponse(
-    val success: Boolean = true,
-    val profile: StaffProfile,
-    val message: String? = null,
-    val timestamp: Long = System.currentTimeMillis()
-)
 
 @Serializable
 data class AdminCreatedResponse(

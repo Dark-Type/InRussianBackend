@@ -1,5 +1,6 @@
 package com.inRussian.tables
 
+import com.inRussian.config.appJson
 import com.inRussian.models.badge.BadgeType
 import kotlinx.serialization.json.JsonElement
 import org.jetbrains.exposed.dao.id.UUIDTable
@@ -13,6 +14,6 @@ object Badges : UUIDTable("badges") {
     val description = text("description").nullable()
     val imageId = varchar("image_id", 255)
     val badgeType = enumerationByName("badge_type", 30, BadgeType::class)
-    val criteria = jsonb<JsonElement>("criteria", json)
+    val criteria = jsonb<JsonElement>("criteria", appJson)
     val createdAt = timestamp("created_at").defaultExpression(CurrentTimestamp)
 }

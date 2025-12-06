@@ -1,16 +1,12 @@
 package com.inRussian.services.v2
 
+import com.inRussian.config.appJson
 import com.inRussian.models.tasks.TaskBody
 import com.inRussian.models.v2.UserAttemptDTO
-import com.inRussian.repositories.TaskRepository
-import com.inRussian.repositories.v2.AttemptRepository
+import com.inRussian.repositories.AttemptRepository
 import com.inRussian.tables.TaskEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.PolymorphicSerializer
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.modules.polymorphic
-import kotlinx.serialization.modules.subclass
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import java.util.UUID
@@ -19,27 +15,6 @@ class UserAttemptService(
     private val attemptRepo: AttemptRepository
 ) {
 
-    // Use the same serializer configuration as TaskRepository
-    private val jsonConfig = Json {
-        serializersModule = SerializersModule {
-            polymorphic(TaskBody::class) {
-                subclass(TaskBody.AudioConnectTask::class)
-                subclass(TaskBody.TextConnectTask::class)
-                subclass(TaskBody.TextInputTask::class)
-                subclass(TaskBody.TextInputWithVariantTask::class)
-                subclass(TaskBody.ImageConnectTask::class)
-                subclass(TaskBody.ListenAndSelect::class)
-                subclass(TaskBody.ImageAndSelect::class)
-                subclass(TaskBody.ConstructSentenceTask::class)
-                subclass(TaskBody.SelectWordsTask::class)
-            }
-            contextual(ByteArray::class) {
-                TaskRepository.ByteArraySerializer
-            }
-        }
-        encodeDefaults = true
-        ignoreUnknownKeys = true
-    }
 
     suspend fun getUserThemeAttempts(userId: UUID, themeId: UUID): List<UserAttemptDTO> =
         newSuspendedTransaction(Dispatchers.IO) {
@@ -51,7 +26,7 @@ class UserAttemptService(
                     .where { TaskEntity.id eq attempt.taskId }
                     .first()
 
-                val taskBody = jsonConfig.decodeFromJsonElement(
+                val taskBody = appJson.decodeFromJsonElement(
                     PolymorphicSerializer(TaskBody::class),
                     task[TaskEntity.taskBody]
                 )

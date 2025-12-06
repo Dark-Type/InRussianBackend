@@ -19,6 +19,21 @@ fun Application.configureSecurity() {
     val jwtDomain = environment.config.propertyOrNull("jwt.domain")?.getString() ?: "http://localhost:8080/"
     val jwtRealm = "InRussian API"
 
+    fun validateCredential(credential: JWTCredential, requiredRole: UserRole? = null): JWTPrincipal? {
+        val userId = credential.payload.getClaim("userId").asString()
+        val role = credential.payload.getClaim("role").asString()
+        val status = credential.payload.getClaim("status").asString()
+        if (credential.payload.audience.contains(jwtAudience)
+            && userId != null
+            && role != null
+            && status == UserStatus.ACTIVE.name
+            && (requiredRole == null || role == requiredRole.name)
+        ) {
+            return JWTPrincipal(credential.payload)
+        }
+        return null
+    }
+
     install(Authentication) {
         jwt("auth-jwt") {
             realm = jwtRealm
@@ -30,24 +45,17 @@ fun Application.configureSecurity() {
             )
 
             validate { credential ->
-
-                val userId = credential.payload.getClaim("userId").asString()
-                val userRole = credential.payload.getClaim("role").asString()
-
-                if (credential.payload.audience.contains(jwtAudience) && userId != null && userRole != null) {
-                    JWTPrincipal(credential.payload)
-                } else {
-                    null
-                }
+                validateCredential(credential, requiredRole = null)
             }
 
-            challenge { defaultScheme, realm ->
+            challenge { _, _ ->
                 call.respondText(
-                    "Token is not valid or has expired",
+                    "Token is not valid, expired or account is not active",
                     status = HttpStatusCode.Unauthorized
                 )
             }
         }
+
         jwt("admin-jwt") {
             realm = jwtRealm
             verifier(
@@ -57,13 +65,10 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
-                val userRole = credential.payload.getClaim("role").asString()
-                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.ADMIN.name) {
-                    JWTPrincipal(credential.payload)
-                } else null
+                validateCredential(credential, requiredRole = UserRole.ADMIN)
             }
-            challenge { defaultScheme, realm ->
-                call.respondText("Admin access required", status = HttpStatusCode.Forbidden)
+            challenge { _, _ ->
+                call.respondText("Admin access required or account is not active", status = HttpStatusCode.Forbidden)
             }
         }
 
@@ -76,13 +81,10 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
-                val userRole = credential.payload.getClaim("role").asString()
-                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.EXPERT.name) {
-                    JWTPrincipal(credential.payload)
-                } else null
+                validateCredential(credential, requiredRole = UserRole.EXPERT)
             }
-            challenge { defaultScheme, realm ->
-                call.respondText("Expert access required", status = HttpStatusCode.Forbidden)
+            challenge { _, _ ->
+                call.respondText("Expert access required or account is not active", status = HttpStatusCode.Forbidden)
             }
         }
 
@@ -95,13 +97,13 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
-                val userRole = credential.payload.getClaim("role").asString()
-                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.CONTENT_MODERATOR.name) {
-                    JWTPrincipal(credential.payload)
-                } else null
+                validateCredential(credential, requiredRole = UserRole.CONTENT_MODERATOR)
             }
-            challenge { defaultScheme, realm ->
-                call.respondText("Content moderator access required", status = HttpStatusCode.Forbidden)
+            challenge { _, _ ->
+                call.respondText(
+                    "Content moderator access required or account is not active",
+                    status = HttpStatusCode.Forbidden
+                )
             }
         }
 
@@ -114,13 +116,10 @@ fun Application.configureSecurity() {
                     .build()
             )
             validate { credential ->
-                val userRole = credential.payload.getClaim("role").asString()
-                if (credential.payload.audience.contains(jwtAudience) && userRole == UserRole.STUDENT.name) {
-                    JWTPrincipal(credential.payload)
-                } else null
+                validateCredential(credential, requiredRole = UserRole.STUDENT)
             }
-            challenge { defaultScheme, realm ->
-                call.respondText("Student access required", status = HttpStatusCode.Forbidden)
+            challenge { _, _ ->
+                call.respondText("Student access required or account is not active", status = HttpStatusCode.Forbidden)
             }
         }
     }
