@@ -1,13 +1,14 @@
 package com.inRussian.tables
 
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.timestamp
 
 
 object UserCourseStatistics : Table("user_course_statistics") {
-    val userId = reference("user_id", Users)
-    val courseId = reference("course_id", Courses)
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
+    val courseId = reference("course_id", Courses, onDelete = ReferenceOption.CASCADE)
     val tasksCompleted = integer("tasks_completed").default(0)
     val tasksAttempted = integer("tasks_attempted").default(0)
     val tasksTotal = integer("tasks_total").nullable()

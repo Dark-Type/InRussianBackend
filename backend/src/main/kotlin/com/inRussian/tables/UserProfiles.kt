@@ -2,12 +2,13 @@ package com.inRussian.tables
 
 import com.inRussian.models.users.Gender
 import com.inRussian.models.users.PeriodSpent
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.date
 
 
 object UserProfiles : Table("user_profiles") {
-    val userId = reference("user_id", Users)
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
     val surname = varchar("surname", 100)
     val name = varchar("name", 100)
     val patronymic = varchar("patronymic", 100).nullable()

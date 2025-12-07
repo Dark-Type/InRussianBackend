@@ -1,5 +1,6 @@
 package com.inRussian.tables
 
+import org.jetbrains.exposed.sql.ReferenceOption
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.javatime.CurrentTimestamp
 import org.jetbrains.exposed.sql.javatime.date
@@ -7,7 +8,7 @@ import org.jetbrains.exposed.sql.javatime.timestamp
 
 
 object UserStatistics : Table("user_statistics") {
-    val userId = reference("user_id", Users)
+    val userId = reference("user_id", Users, onDelete = ReferenceOption.CASCADE)
     val totalTasksCompleted = integer("total_tasks_completed").default(0)
     val totalTasksAttempted = integer("total_tasks_attempted").default(0)
     val totalTimeSpentSeconds = integer("total_time_spent_seconds").default(0)
