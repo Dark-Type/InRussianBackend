@@ -1,5 +1,6 @@
 package com.inRussian.services.v3
 
+import com.inRussian.config.appJson
 import com.inRussian.models.content.*
 import com.inRussian.models.tasks.*
 import com.inRussian.models.users.SystemLanguage
@@ -7,9 +8,12 @@ import com.inRussian.repositories.*
 import com.inRussian.requests.content.*
 import com.inRussian.utils.validation.FieldError
 import com.inRussian.utils.validation.ValidationException
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.time.Instant
+import java.time.format.DateTimeParseException
 import java.util.UUID
 
 @Serializable
@@ -34,6 +38,41 @@ data class CloneCourseRequest(
     val newCourseName: String? = null,
     val copyTasks: Boolean = true
 )
+
+@Serializable
+private data class ExportedCourseMeta(
+    val name: String,
+    val description: String? = null,
+    val authorUrl: String? = null,
+    val language: String? = null
+)
+
+@Serializable
+private data class ExportedTask(
+    val question: String,
+    val types: List<String>,
+    val body: JsonElement,
+    val createdAt: String? = null,
+    val updatedAt: String? = null
+)
+
+@Serializable
+private data class ExportedTheme(
+    val path: List<String>,
+    val description: String? = null,
+    val position: Int? = null,
+    val tasks: List<ExportedTask> = emptyList()
+)
+
+@Serializable
+private data class CourseJsonEnvelope(
+    val version: Int = 1,
+    val exportedAt: String,
+    val since: String? = null,
+    val course: ExportedCourseMeta,
+    val themes: List<ExportedTheme>
+)
+
 
 class ContentService(
     private val themesRepository: ThemesRepository,
@@ -191,20 +230,187 @@ class ContentService(
         contentStatsRepository.countStats()
     }
 
-    // ---------- Export ----------
-
-    suspend fun exportCourseJson(courseId: String): Result<String> = runCatching {
+    suspend fun exportCourseJson(courseId: String, sinceIsoUtc: String? = null): Result<String> = runCatching {
         validateUuid(courseId, "courseId")
         val course = coursesRepository.findById(courseId)
             ?: throw NoSuchElementException("Course not found: $courseId")
-        val themes = themesRepository.getCourseTree(courseId)
-        val export = CourseExport(
+
+        val sinceInstant = sinceIsoUtc?.let {
+            try {
+                Instant.parse(it)
+            } catch (_: DateTimeParseException) {
+                throw ValidationException(listOf(FieldError("since", "invalid_value", "Invalid ISO-8601 instant: $it")))
+            }
+        }
+
+        val tree = themesRepository.getCourseTree(courseId)
+
+        val themesToExport = mutableListOf<ExportedTheme>()
+        suspend fun walk(node: ThemeTreeNode, path: List<String>) {
+            val currentPath = path + node.theme.name
+            val tasks = tasksRepository.listByTheme(UUID.fromString(node.theme.id))
+                .filter { sinceInstant == null || Instant.parse(it.updatedAt) >= sinceInstant }
+                .map { task ->
+                    ExportedTask(
+                        question = task.question ?: "",
+                        types = task.taskType.map { it.name },
+                        body = json.encodeToJsonElement(
+                            PolymorphicSerializer(TaskBody::class),
+                            task.taskBody
+                        ),
+                        createdAt = task.createdAt,
+                        updatedAt = task.updatedAt
+                    )
+                }
+
+            // record current node (even if it has children) to preserve structure
+            themesToExport += ExportedTheme(
+                path = currentPath,
+                description = node.theme.description,
+                position = node.theme.position,
+                tasks = tasks
+            )
+
+            for (child in node.children) {
+                walk(child, currentPath)
+            }
+        }
+
+        for (root in tree) {
+            walk(root, emptyList())
+        }
+
+        val envelope = CourseJsonEnvelope(
             version = 1,
             exportedAt = Instant.now().toString(),
-            course = course,
-            themes = themes
+            since = sinceIsoUtc,
+            course = ExportedCourseMeta(
+                name = course.name,
+                description = course.description,
+                authorUrl = course.authorUrl,
+                language = course.language
+            ),
+            themes = themesToExport
         )
-        json.encodeToString(export)
+
+        json.encodeToString(CourseJsonEnvelope.serializer(), envelope)
+    }
+
+    // ---------- Import for translators ----------
+    suspend fun importCourseJson(
+        json: String,
+        importerId: String,
+        targetCourseId: String?,
+        createIfMissing: Boolean,
+        languageOverride: String?,
+        addOnly: Boolean
+    ): Result<ImportReport> = runCatching {
+        validateUuid(importerId, "importerId")
+
+        val envelope = this.json.decodeFromString(CourseJsonEnvelope.serializer(), json)
+
+        val courseId: String = when {
+            targetCourseId != null -> {
+                validateUuid(targetCourseId, "targetCourseId")
+                targetCourseId
+            }
+
+            createIfMissing -> {
+                val lang = languageOverride ?: envelope.course.language ?: "en"
+                val newCourse = coursesRepository.create(
+                    importerId,
+                    CreateCourseRequest(
+                        name = envelope.course.name,
+                        description = envelope.course.description,
+                        authorUrl = envelope.course.authorUrl,
+                        language = lang,
+                        isPublished = false,
+                        coursePoster = null
+                    )
+                )
+                newCourse.id
+            }
+
+            else -> throw ValidationException(
+                listOf(FieldError("targetCourseId", "required", "targetCourseId is null and createIfMissing=false"))
+            )
+        }
+
+        var createdThemes = 0
+        var skippedThemes = 0
+        var createdTasks = 0
+        var skippedTasks = 0
+
+        // helper to find or create theme by path
+        suspend fun ensureTheme(path: List<String>, desc: String?, pos: Int?): Theme {
+            require(path.isNotEmpty())
+            var parentId: String? = null
+            var last: Theme? = null
+            path.forEachIndexed { idx, name ->
+                val existing = if (parentId == null) {
+                    themesRepository.listRootByCourse(courseId).firstOrNull { it.name == name }
+                } else {
+                    themesRepository.listChildren(parentId!!).firstOrNull { it.name == name }
+                }
+
+                last = existing ?: themesRepository.create(
+                    CreateThemeRequest(
+                        courseId = courseId,
+                        parentThemeId = parentId,
+                        name = name,
+                        description = if (idx == path.lastIndex) desc else null,
+                        position = if (idx == path.lastIndex) pos else null
+                    )
+                ).also { createdThemes++ }
+
+                if (existing != null && idx == path.lastIndex) skippedThemes++
+                parentId = last!!.id
+            }
+            return last!!
+        }
+
+        for (themePayload in envelope.themes) {
+            if (themePayload.path.isEmpty()) continue
+            val leaf = ensureTheme(themePayload.path, themePayload.description, themePayload.position)
+            val leafId = UUID.fromString(leaf.id)
+
+            val existingPairs = tasksRepository.listByTheme(leafId)
+                .map { it.question ?: ("" to it.taskType.map(TaskType::name).toSet()) }
+                .toMutableSet()
+
+            for (taskPayload in themePayload.tasks) {
+                val typesSet = taskPayload.types.map { TaskType.valueOf(it) }.toSet()
+                val key = taskPayload.question to typesSet
+
+                if (addOnly && key in existingPairs) {
+                    skippedTasks++
+                    continue
+                }
+
+                val body = appJson.decodeFromJsonElement(
+                    PolymorphicSerializer(TaskBody::class),
+                    taskPayload.body
+                )
+
+                tasksRepository.createTask(
+                    CreateTaskModelRequest(
+                        themeId = leaf.id,
+                        question = taskPayload.question,
+                        taskBody = body,
+                        taskTypes = typesSet.toList()
+                    )
+                )
+                existingPairs += key
+                createdTasks++
+            }
+        }
+
+        ImportReport(
+            createdThemes = createdThemes,
+            createdTasks = createdTasks,
+            skippedThemes = skippedThemes,
+            skippedTasks = skippedTasks
+        )
     }
 
     // ---------- Clone Course ----------

@@ -33,6 +33,9 @@ class CourseResource(val courseId: String)
 @Resource("/content/courses/{courseId}/export")
 class CourseExportResource(val courseId: String)
 
+@Resource("/content/courses/import")
+class CourseImportResource
+
 @Resource("/content/courses/{courseId}/clone")
 class CourseCloneResource(val courseId: String)
 
@@ -81,10 +84,31 @@ fun Route.contentManagerRoutes(contentService: ContentService) {
         }
 
         get<CourseExportResource> { resource ->
-            val result = contentService.exportCourseJson(resource.courseId)
+            val since = call.request.queryParameters["since"] // optional ISO-8601 UTC
+            val result = contentService.exportCourseJson(resource.courseId, since)
             call.respondServiceResult(result) { exportJson ->
                 respondText(exportJson, ContentType.Application.Json)
             }
+        }
+
+        post<CourseImportResource> {
+            val importerId = call.requireUserId() ?: return@post
+            val targetCourseId = call.request.queryParameters["targetCourseId"]
+            val createIfMissing =
+                call.request.queryParameters["createIfMissing"]?.toBooleanStrictOrNull() ?: true
+            val languageOverride = call.request.queryParameters["language"]
+            val addOnly = call.request.queryParameters["addOnly"]?.toBooleanStrictOrNull() ?: true
+            val payload = call.receiveText()
+
+            val result = contentService.importCourseJson(
+                json = payload,
+                importerId = importerId,
+                targetCourseId = targetCourseId,
+                createIfMissing = createIfMissing,
+                languageOverride = languageOverride,
+                addOnly = addOnly
+            )
+            call.respondServiceResult(result)
         }
 
         post<CourseCloneResource> { resource ->

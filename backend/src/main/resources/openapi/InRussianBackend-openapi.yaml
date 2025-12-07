@@ -1165,6 +1165,11 @@ paths:
     get:
       description: ""
       parameters:
+        - name: "since"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
         - name: "courseId"
           in: "path"
           required: true
@@ -1179,6 +1184,14 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
               examples:
                 Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "validation_failed"
+                    code: "VALIDATION_ERROR"
+                    timestamp: "null"
+                    details: "null"
+                Example#2:
                   description: ""
                   value:
                     success: false
@@ -1331,6 +1344,74 @@ paths:
                     code: "INTERNAL_ERROR"
                     timestamp: "null"
                     details: "null"
+  /content/courses/import:
+    post:
+      description: ""
+      parameters:
+        - name: "targetCourseId"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "createIfMissing"
+          in: "query"
+          required: false
+          schema:
+            type: "boolean"
+        - name: "language"
+          in: "query"
+          required: false
+          schema:
+            type: "string"
+        - name: "addOnly"
+          in: "query"
+          required: false
+          schema:
+            type: "boolean"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/Object"
+        "422":
+          description: "Unprocessable Entity"
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                Example#1:
+                  description: ""
+                  value:
+                    success: false
+                    error: "validation_failed"
+                    code: "VALIDATION_ERROR"
+                    timestamp: "null"
+                    details: "null"
+                Example#2:
+                  description: ""
+                  value:
+                    success: false
+                    error: "validation_failed"
+                    code: "VALIDATION_ERROR"
+                    timestamp: "null"
+                    details: "null"
+                Example#3:
+                  description: ""
+                  value:
+                    success: false
+                    error: "validation_failed"
+                    code: "VALIDATION_ERROR"
+                    timestamp: "null"
+                    details: "null"
+        "204":
+          description: "No Content"
+          content:
+            '*/*':
+              schema:
+                type: "object"
   /content/reports:
     get:
       description: ""
