@@ -194,6 +194,7 @@ class AuthServiceImplementation(
     }
 
     override suspend fun login(request: LoginRequest): Result<LoginResponse> {
+
         validateLoginRequest(request)
 
         return runCatching {
@@ -203,9 +204,17 @@ class AuthServiceImplementation(
             when (user.status) {
                 UserStatus.SUSPENDED -> throw AccountSuspendedException()
                 UserStatus.DEACTIVATED -> throw AccountDeactivatedException()
-                UserStatus.PENDING_VERIFICATION, UserStatus.ACTIVE -> { /* proceed */ }
+                UserStatus.PENDING_VERIFICATION, UserStatus.ACTIVE -> { /* proceed */
+                }
             }
 
+            logger.info(
+                "Login debug: email={}, dbHashPrefix={}, incomingPwLen={}, matches={}",
+                user.email,
+                user.passwordHash.take(15),
+                request.password.length,
+                BCrypt.checkpw(request.password, user.passwordHash)
+            )
             if (!BCrypt.checkpw(request.password, user.passwordHash)) {
                 throw InvalidCredentialsException()
             }
@@ -233,7 +242,9 @@ class AuthServiceImplementation(
                 passwordHash = BCrypt.hashpw(adminPassword, BCrypt.gensalt(12)),
                 role = UserRole.ADMIN,
                 systemLanguage = SystemLanguage.ENGLISH,
-                status = UserStatus.ACTIVE
+                status = UserStatus.ACTIVE,
+                name = "Первый",
+                surname = "Администратор"
             )
 
             userRepository.create(admin)
@@ -284,7 +295,11 @@ class AuthServiceImplementation(
         }
     }
 
-    private fun getVerificationEmailContent(code: String, ttlMinutes: Long, language: SystemLanguage): Triple<String, String, String> {
+    private fun getVerificationEmailContent(
+        code: String,
+        ttlMinutes: Long,
+        language: SystemLanguage
+    ): Triple<String, String, String> {
         return when (language) {
             SystemLanguage.RUSSIAN -> Triple(
                 "Код подтверждения регистрации",
@@ -299,6 +314,7 @@ class AuthServiceImplementation(
                     <p>Если вы не регистрировались на нашем сайте, проигнорируйте это письмо.</p>
                 """.trimIndent()
             )
+
             SystemLanguage.UZBEK -> Triple(
                 "Ro'yxatdan o'tishni tasdiqlash kodi",
                 """
@@ -312,6 +328,7 @@ class AuthServiceImplementation(
                     <p>Agar siz ro'yxatdan o'tmagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.</p>
                 """.trimIndent()
             )
+
             SystemLanguage.CHINESE -> Triple(
                 "注册验证码",
                 """
@@ -325,6 +342,7 @@ class AuthServiceImplementation(
                     <p>如果您没有注册，请忽略此邮件。</p>
                 """.trimIndent()
             )
+
             SystemLanguage.HINDI -> Triple(
                 "पंजीकरण सत्यापन कोड",
                 """
@@ -338,6 +356,7 @@ class AuthServiceImplementation(
                     <p>यदि आपने पंजीकरण नहीं किया है, तो इस ईमेल को अनदेखा करें।</p>
                 """.trimIndent()
             )
+
             SystemLanguage.TAJIK -> Triple(
                 "Рамзи тасдиқи бақайдгирӣ",
                 """
@@ -351,6 +370,7 @@ class AuthServiceImplementation(
                     <p>Агар шумо бақайдгирӣ нашуда бошед, ин паёмро рад кунед.</p>
                 """.trimIndent()
             )
+
             SystemLanguage.ENGLISH -> Triple(
                 "Registration verification code",
                 """
