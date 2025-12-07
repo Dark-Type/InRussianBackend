@@ -248,8 +248,14 @@ class ContentService(
         val themesToExport = mutableListOf<ExportedTheme>()
         suspend fun walk(node: ThemeTreeNode, path: List<String>) {
             val currentPath = path + node.theme.name
+
             val tasks = tasksRepository.listByTheme(UUID.fromString(node.theme.id))
-                .filter { sinceInstant == null || Instant.parse(it.updatedAt) >= sinceInstant }
+                .filter { task ->
+                    sinceInstant == null || runCatching { Instant.parse(task.updatedAt) }
+                        .getOrNull()
+                        ?.let { it >= sinceInstant }
+                            ?: false
+                }
                 .map { task ->
                     ExportedTask(
                         question = task.question ?: "",
@@ -263,7 +269,6 @@ class ContentService(
                     )
                 }
 
-            // record current node (even if it has children) to preserve structure
             themesToExport += ExportedTheme(
                 path = currentPath,
                 description = node.theme.description,
@@ -271,14 +276,10 @@ class ContentService(
                 tasks = tasks
             )
 
-            for (child in node.children) {
-                walk(child, currentPath)
-            }
+            for (child in node.children) walk(child, currentPath)
         }
 
-        for (root in tree) {
-            walk(root, emptyList())
-        }
+        for (root in tree) walk(root, emptyList())
 
         val envelope = CourseJsonEnvelope(
             version = 1,
