@@ -17,7 +17,7 @@ class MediaService(private val mediaRepository: MediaRepository) {
         private val ALLOWED_AVATAR_TYPES = listOf("image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp")
         private val ALLOWED_CONTENT_TYPES = listOf(
             "image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp",
-            "video/mp4", "video/avi", "audio/mp3", "audio/wav", "application/pdf"
+            "video/mp4", "video/avi", "audio/mp3", "audio/wav", "application/pdf", "audio/mpeg"
         )
     }
 
